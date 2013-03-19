@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="Blabber" targetNamespace="com.flyingdog" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:tns="com.flyingdog" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+  <wsdl:types>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="com.flyingdog" attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="com.flyingdog">
+  <xsd:element name="blabber" type="tns:blabber"/>
+  <xsd:complexType name="blabber">
+    <xsd:sequence>
+      <xsd:element minOccurs="0" name="string" type="xsd:string"/>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:element name="blabberResponse" type="tns:blabberResponse"/>
+  <xsd:complexType name="blabberResponse">
+    <xsd:sequence>
+      <xsd:element minOccurs="0" name="string" type="xsd:string"/>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:schema>
+  </wsdl:types>
+  <wsdl:message name="blabber">
+    <wsdl:part name="parameters" element="tns:blabber">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="blabberResponse">
+    <wsdl:part name="parameters" element="tns:blabberResponse">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:portType name="BlabberPortType">
+    <wsdl:operation name="blabber">
+      <wsdl:input name="blabber" message="tns:blabber">
+    </wsdl:input>
+      <wsdl:output name="blabberResponse" message="tns:blabberResponse">
+    </wsdl:output>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="BlabberSoapBinding" type="tns:BlabberPortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="blabber">
+      <soap:operation soapAction="blabber" style="document"/>
+      <wsdl:input name="blabber">
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="blabberResponse">
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="Blabber">
+    <wsdl:port name="BlabberPort" binding="tns:BlabberSoapBinding">
+      <soap:address location="http://localhost:8080/SY_File/Blabber"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
