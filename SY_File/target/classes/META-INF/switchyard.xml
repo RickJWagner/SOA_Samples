@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<switchyard xmlns="urn:switchyard-config:switchyard:1.0" name="SY_File" targetNamespace="urn:com.flyingdog:switchyard-example:1.0">
+    <sca:composite xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912" name="SY_File" targetNamespace="urn:com.flyingdog:switchyard-example:1.0">
+        <sca:service name="Blabber" promote="CamelServiceRoute/Blabber">
+            <sca:interface.java interface="com.flyingdog.Blabber"/>
+            <file:binding.file xmlns:file="urn:switchyard-component-camel-file:config:1.0">
+                <sy:operationSelector xmlns:sy="urn:switchyard-config:switchyard:1.0" operationName="blabber"/>
+                <file:contextMapper/>
+                <file:directory>/home/rick/Junk</file:directory>
+                <file:fileName>test.sy</file:fileName>
+                <file:consume/>
+            </file:binding.file>
+        </sca:service>
+        <sca:component name="CamelServiceRoute">
+            <camel:implementation.camel xmlns:camel="urn:switchyard-component-camel:config:1.0">
+                <camel:java class="com.flyingdog.CamelServiceRoute"/>
+            </camel:implementation.camel>
+            <sca:service name="Blabber">
+                <sca:interface.java interface="com.flyingdog.Blabber"/>
+            </sca:service>
+        </sca:component>
+    </sca:composite>
+</switchyard>

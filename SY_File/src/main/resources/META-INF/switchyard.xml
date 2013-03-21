@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<sy:switchyard xmlns:bean="urn:switchyard-component-bean:config:1.0" xmlns:file="urn:switchyard-component-camel-file:config:1.0" xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912" xmlns:sy="urn:switchyard-config:switchyard:1.0" name="SY_File" targetNamespace="urn:com.flyingdog:switchyard-example:1.0">
+<sy:switchyard xmlns:bean="urn:switchyard-component-bean:config:1.0" xmlns:camel="urn:switchyard-component-camel:config:1.0" xmlns:file="urn:switchyard-component-camel-file:config:1.0" xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912" xmlns:sy="urn:switchyard-config:switchyard:1.0" name="SY_File" targetNamespace="urn:com.flyingdog:switchyard-example:1.0">
   <sca:composite name="SY_File" targetNamespace="urn:com.flyingdog:switchyard-example:1.0">
-    <sca:component name="BlabberImpl">
-      <bean:implementation.bean class="com.flyingdog.BlabberImpl"/>
+    <sca:component name="CamelServiceRoute">
+      <camel:implementation.camel>
+        <camel:java class="com.flyingdog.CamelServiceRoute"/>
+      </camel:implementation.camel>
       <sca:service name="Blabber">
         <sca:interface.java interface="com.flyingdog.Blabber"/>
       </sca:service>
     </sca:component>
-    <sca:service name="Blabber" promote="BlabberImpl/Blabber">
+    <sca:service name="Blabber" promote="CamelServiceRoute/Blabber">
       <sca:interface.java interface="com.flyingdog.Blabber"/>
       <file:binding.file>
         <sy:operationSelector operationName="blabber"/>

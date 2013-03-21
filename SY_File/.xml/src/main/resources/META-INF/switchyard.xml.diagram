@@ -16,10 +16,10 @@
       <businessObjects href="../../../../../src/main/resources/META-INF/switchyard.xml#//@switchyard/@composite"/>
     </link>
     <children xsi:type="pi:ContainerShape" visible="true" active="true">
-      <graphicsAlgorithm xsi:type="al:Rectangle" lineWidth="1" filled="false" lineVisible="false" transparency="0.0" width="120" height="70" x="250" y="150">
+      <graphicsAlgorithm xsi:type="al:Rectangle" lineWidth="1" filled="false" lineVisible="false" transparency="0.0" width="120" height="70" x="260" y="110">
         <graphicsAlgorithmChildren xsi:type="al:RoundedRectangle" lineWidth="1" transparency="0.0" width="100" height="50" x="10" y="10" style="//@styles.1" cornerWidth="6">
           <properties key="sca-type" value="component"/>
-          <graphicsAlgorithmChildren xsi:type="al:Text" foreground="//@colors.3" lineWidth="1" filled="false" transparency="0.0" width="80" height="30" x="10" y="10" font="//@fonts.1" horizontalAlignment="ALIGNMENT_CENTER" value="BlabberImpl"/>
+          <graphicsAlgorithmChildren xsi:type="al:Text" foreground="//@colors.3" lineWidth="1" filled="false" transparency="0.0" width="80" height="30" x="10" y="10" font="//@fonts.1" horizontalAlignment="ALIGNMENT_CENTER" value="CamelServiceRoute"/>
         </graphicsAlgorithmChildren>
       </graphicsAlgorithm>
       <link>
@@ -28,17 +28,17 @@
       <children xsi:type="pi:ContainerShape" visible="true" active="true">
         <graphicsAlgorithm xsi:type="al:Image" lineWidth="1" transparency="0.0" width="16" height="16" x="2" y="20" id="org.switchyard.tools.ui.editor.componentservice.16" stretchH="false" stretchV="false" proportional="false"/>
         <link>
-          <businessObjects href="../../../../../src/main/resources/META-INF/switchyard.xml#ComponentService:BlabberImpl:Blabber"/>
+          <businessObjects href="../../../../../src/main/resources/META-INF/switchyard.xml#ComponentService:CamelServiceRoute:Blabber"/>
         </link>
         <anchors xsi:type="pi:ChopboxAnchor" incomingConnections="//@connections.0">
           <link>
-            <businessObjects href="../../../../../src/main/resources/META-INF/switchyard.xml#ComponentService:BlabberImpl:Blabber"/>
+            <businessObjects href="../../../../../src/main/resources/META-INF/switchyard.xml#ComponentService:CamelServiceRoute:Blabber"/>
           </link>
         </anchors>
       </children>
     </children>
     <children xsi:type="pi:ContainerShape" visible="true" active="true">
-      <graphicsAlgorithm xsi:type="al:Rectangle" lineWidth="1" filled="false" lineVisible="false" transparency="0.0" width="100" height="50" x="10" y="80">
+      <graphicsAlgorithm xsi:type="al:Rectangle" lineWidth="1" filled="false" lineVisible="false" transparency="0.0" width="100" height="50" x="10" y="140">
         <graphicsAlgorithmChildren xsi:type="al:Polygon" lineWidth="1" filled="true" transparency="0.0" width="100" height="50" style="//@styles.2">
           <properties key="sca-type" value="service"/>
           <graphicsAlgorithmChildren xsi:type="al:Text" foreground="//@colors.3" lineWidth="1" filled="false" transparency="0.0" width="85" height="25" x="5" y="12" font="//@fonts.1" horizontalAlignment="ALIGNMENT_CENTER" value="Blabber"/>
