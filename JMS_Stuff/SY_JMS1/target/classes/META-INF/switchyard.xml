@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<switchyard xmlns="urn:switchyard-config:switchyard:1.0" name="SY_JMS1" targetNamespace="urn:com.example.switchyard:SY_JMS1:1.0">
+    <sca:composite xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912" name="SY_JMS1" targetNamespace="urn:com.example.switchyard:SY_JMS1:1.0">
+        <sca:service name="Echo" promote="EchoBean/Echo">
+            <sca:interface.java interface="com.example.switchyard.SY_JMS1.Echo"/>
+            <jms:binding.jms xmlns:jms="urn:switchyard-component-camel-jms:config:1.0">
+                <operationSelector operationName="echo"/>
+                <jms:queue>fdq1</jms:queue>
+                <jms:connectionFactory>#ConnectionFactory</jms:connectionFactory>
+            </jms:binding.jms>
+        </sca:service>
+        <sca:component name="EchoBean">
+            <bean:implementation.bean xmlns:bean="urn:switchyard-component-bean:config:1.0" class="com.example.switchyard.SY_JMS1.EchoBean"/>
+            <sca:service name="Echo">
+                <sca:interface.java interface="com.example.switchyard.SY_JMS1.Echo"/>
+            </sca:service>
+        </sca:component>
+    </sca:composite>
+</switchyard>
