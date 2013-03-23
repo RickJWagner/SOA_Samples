@@ -14,5 +14,4 @@ The JMS project includes a sample MDB to prove we can consume from a queue, and 
 Invoke the servlet like this, passing an arg:  
 http://localhost:8080/SY_JMS_HelperWebApp/JMSClient?myarg=Hooha
 
-
-The Switchyard project consumes from the queue.
+Use either the plain JMS or the JCA project to consume from the queue.
