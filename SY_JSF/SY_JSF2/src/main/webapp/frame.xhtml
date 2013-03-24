@@ -1,0 +1,40 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+    xmlns:ui="http://java.sun.com/jsf/facelets"
+    xmlns:h="http://java.sun.com/jsf/html"
+    xmlns:f="http://java.sun.com/jsf/core">
+    
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+    <title>Frame</title>
+    <link type="text/css" rel="stylesheet" href="css/default.css"/>
+</head>
+
+<body>
+
+    <h1>New Frame</h1>
+ 
+    <div style="color: red">
+       <h:messages id="messages" globalOnly="false" />
+    </div>
+ 
+    <h:form id="newFrame">
+        <div>
+            Frame:
+            <h:inputText id="gameId" value="#{frame.gameId}" required="true"/>
+            <br/>
+            Game ID:
+            <h:inputText id="frameID" value="#{frame.frameId}" required="true"/>
+            <br/>
+            Count Throw 1:
+            <h:inputText id="count1" value="#{frame.pinCountOne}" required="true"/>
+      		<br/>
+            Count Throw 2:
+            <h:inputText id="count2" value="#{frame.pinCountTwo}" required="true"/>
+            <p/>
+            <h:commandButton id="createFrame" value="Create" action="#{frame.create}"/>
+        </div>
+    </h:form>
+
+</body>
+</html>

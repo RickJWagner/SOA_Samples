@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<switchyard xmlns="urn:switchyard-config:switchyard:1.0" xmlns:bean="urn:switchyard-component-bean:config:1.0" xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912" name="SY_FrameSvc" targetNamespace="urn:com.example.switchyard:SY_FrameSvc:1.0">
+  <sca:composite name="SY_FrameSvc" targetNamespace="urn:com.example.switchyard:SY_FrameSvc:1.0">
+    <sca:component name="FrameSvcBean">
+      <bean:implementation.bean class="com.example.switchyard.SY_FrameSvc.FrameSvcBean"/>
+      <sca:service name="FrameSvc">
+        <sca:interface.java interface="com.example.switchyard.SY_FrameSvc.FrameSvc"/>
+      </sca:service>
+    </sca:component>
+  </sca:composite>
+</switchyard>
