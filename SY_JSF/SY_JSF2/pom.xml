@@ -3,7 +3,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.jboss.as.quickstarts</groupId>
-  <artifactId>jboss-as-greeter</artifactId>
+  <artifactId>SY_JSF</artifactId>
   <version>7.1.2-SNAPSHOT</version>
   <packaging>war</packaging>
   <name>JBoss AS Quickstarts: Greeter</name>
