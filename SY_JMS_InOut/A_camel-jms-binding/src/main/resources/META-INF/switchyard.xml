@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<switchyard xmlns="urn:switchyard-config:switchyard:1.0" xmlns:bean="urn:switchyard-component-bean:config:1.0" xmlns:camel="urn:switchyard-component-camel:config:1.0" xmlns:jms="urn:switchyard-component-camel-jms:config:1.0" xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912">
+  <sca:composite name="camel-jms-binding" targetNamespace="urn:switchyard-quickstart:camel-jms-binding:0.1.0">
+    <sca:service name="GreetingService" promote="CamelServiceRoute/GreetingService">
+      <jms:binding.jms>
+        <jms:queue>GreetingServiceQueue</jms:queue>
+        <jms:connectionFactory>#ConnectionFactory</jms:connectionFactory>
+      </jms:binding.jms>
+    </sca:service>
+    <sca:reference name="RefInterface" multiplicity="0..1">
+      <sca:interface.java interface="org.switchyard.quickstarts.camel.jms.binding.RefInterface"/>
+      <jms:binding.jms name="jms1">
+        <jms:queue>GreetingServiceQueueTwo</jms:queue>
+        <jms:connectionFactory>#ConnectionFactory</jms:connectionFactory>
+      </jms:binding.jms>
+    </sca:reference>
+    <sca:component name="CamelServiceRoute">
+      <camel:implementation.camel>
+        <camel:java class="org.switchyard.quickstarts.camel.jms.binding.CamelServiceRoute"/>
+      </camel:implementation.camel>
+      <sca:service name="GreetingService">
+        <sca:interface.java interface="org.switchyard.quickstarts.camel.jms.binding.GreetingService"/>
+      </sca:service>
+      <sca:reference name="RefInterface">
+        <sca:interface.java interface="org.switchyard.quickstarts.camel.jms.binding.RefInterface"/>
+      </sca:reference>
+    </sca:component>
+  </sca:composite>
+</switchyard>
