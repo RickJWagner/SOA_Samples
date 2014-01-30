@@ -1,0 +1,38 @@
+Manifest-Version: 1.0
+Build-Timestamp: 
+Implementation-Title: Quickstart : Camel JMS Binding
+Built-By: rick
+Implementation-Vendor: JBoss by Red Hat
+Implementation-Vendor-Id: org.switchyard.quickstarts
+Dependencies: org.hornetq
+Project-Version: 1.1.1-p5-redhat-1
+Specification-Title: Quickstart : Camel JMS Binding
+Implementation-Version: 1.1.1-p5-redhat-1
+Os-Version: 3.12.8-200.fc19.x86_64
+Project-Description: Quickstarts repository for SwitchYard
+Specification-Vendor: JBoss by Red Hat
+Created-By: Maven Integration for Eclipse
+Project-Group-Id: org.switchyard.quickstarts
+Project-Name: Quickstart : Camel JMS Binding
+Project-Packaging: jar
+Implementation-URL: http://www.jboss.org/jboss-integration-platform-pa
+ rent/ip-parent/switchyard-parent/switchyard-quickstart-parent/jms-req
+ uestresponse
+Os-Name: Linux
+Java-Vendor: Oracle Corporation
+Project-URL: http://www.jboss.org/jboss-integration-platform-parent/ip
+ -parent/switchyard-parent/switchyard-quickstart-parent/jms-requestres
+ ponse
+Scm-Revision: 
+Project-Artifact-Id: jms-requestresponse
+Scm-Url: http://github.com/jboss/jboss-parent-pom/jboss-integration-pl
+ atform-parent/ip-parent/switchyard-parent/switchyard-quickstart-paren
+ t/jms-requestresponse
+Build-Jdk: 1.7.0_51
+Java-Version: 1.7.0_51
+Scm-Connection: scm:git:git@github.com:jboss/jboss-parent-pom.git/jbos
+ s-integration-platform-parent/ip-parent/switchyard-parent/switchyard-
+ quickstart-parent/jms-requestresponse
+Os-Arch: amd64
+Specification-Version: 1.1.1-p5-redhat-1
+
