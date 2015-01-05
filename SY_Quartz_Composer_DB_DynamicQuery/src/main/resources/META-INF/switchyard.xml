@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<switchyard xmlns="urn:switchyard-config:switchyard:1.0" xmlns:swyd="urn:switchyard-config:switchyard:1.0" xmlns:bean="urn:switchyard-component-bean:config:1.0" xmlns:quartz="urn:switchyard-component-camel-quartz:config:1.0" xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912" xmlns:sql="urn:switchyard-component-camel-sql:config:1.0">
+  <sca:composite name="camel-sql-binding" targetNamespace="urn:switchyard-quickstart:camel-sql-binding:0.1.0">
+    <sca:service name="GreetingService" promote="GreetingService/GreetingService">
+      <quartz:binding.quartz>
+        <operationSelector operationName="listCustomers"/>
+        <quartz:messageComposer class="org.switchyard.quickstarts.camel.sql.binding.SimpleComposer"/>
+        <quartz:name>EveryFiveSecondsJob</quartz:name>
+        <quartz:cron>*/10 * * * * ?</quartz:cron>
+      </quartz:binding.quartz>
+    </sca:service>
+    <sca:reference name="CustomerListService" multiplicity="0..1" promote="GreetingService/RemoveService">
+      <sca:interface.java interface="org.switchyard.quickstarts.camel.sql.binding.SingleGreetService"/>
+      <sql:binding.sql>
+        <sql:contextMapper includes=".*"/>
+        <sql:query>select * from customers where name = #</sql:query>
+        <sql:dataSourceRef>java:jboss/datasources/ExampleDS</sql:dataSourceRef>
+      </sql:binding.sql>
+    </sca:reference>
+    <sca:component name="GreetingService">
+      <bean:implementation.bean class="org.switchyard.quickstarts.camel.sql.binding.GreetingServiceImpl"/>
+      <sca:service name="GreetingService">
+        <sca:interface.java interface="org.switchyard.quickstarts.camel.sql.binding.GreetingService"/>
+      </sca:service>
+      <sca:reference name="RemoveService">
+        <sca:interface.java interface="org.switchyard.quickstarts.camel.sql.binding.SingleGreetService"/>
+      </sca:reference>
+    </sca:component>
+  </sca:composite>
+</switchyard>
