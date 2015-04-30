@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:camel="http://camel.apache.org/schema/spring"
+       xsi:schemaLocation="
+         http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+         http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd">
+         
+         
+         
+
+  <bean id="jmsConnectionFactory"
+        class="org.apache.activemq.ActiveMQSslConnectionFactory">
+    <property name="brokerURL" value="tcp://10.10.177.225:61616" />
+    <property name="userName" value="admin"/>
+    <property name="password" value="admin"/>
+  </bean>
+
+  <bean id="pooledConnectionFactory"
+        class="org.apache.activemq.pool.PooledConnectionFactory">
+    <property name="maxConnections" value="8" />
+    <property name="connectionFactory" ref="jmsConnectionFactory" />
+  </bean>
+
+  <bean id="jmsConfig" class="org.apache.camel.component.jms.JmsConfiguration">
+    <property name="connectionFactory" ref="pooledConnectionFactory"/>
+    <property name="transacted" value="false"/>
+    <property name="concurrentConsumers" value="10"/>
+  </bean>
+
+  <bean id="activemq"
+        class="org.apache.activemq.camel.component.ActiveMQComponent">
+    <property name="configuration" ref="jmsConfig"/>
+  </bean>
+
+    <!--  THIS ROUTE Makes JMS messages for SwitchYard App to find.  SwitchYard app then writes to 'ReplyTo'
+            for another Camel route in this .war -->
+    <camelContext xmlns="http://camel.apache.org/schema/spring">
+    <route id="timer-to-console2">
+        <from uri="timer://foo2?fixedRate=true&amp;period=10s"/>
+        <transform>
+            <simple>Hello Web Application, how are you? ${date:now:yyyy-MM-dd'T'HH:mm:ss:SSS}</simple>
+        </transform>
+        <log message="About to send a message to ***REMOVED***orks.KPI.service.in" />
+        <to uri="activemq:queue:***REMOVED***orks.KPI.service.in"/>
+    </route>
+</camelContext>
+
+ 
+ 
+    <!--  THIS ROUTE reads from the queue that SwitchYard uses as a 'ReplyTo' queue.  It invokes the
+    'Direct' route below -->
+ 	<camel:camelContext id="OTTCreditingServiceCamelContext" xmlns="http://camel.apache.org/schema/spring">
+		<camel:routeBuilder ref="ottCreditingServiceRouteBuilder" />
+	</camel:camelContext>
+	
+	<bean id="ottCreditingServiceRouteBuilder" class="org.sample.CorrelationReadingRouteBuilder" />
+
+    
+    <!--  THIS ROUTE gets a 'direct' invocation from the route that reads from the SY ReplyTo queue -->
+    <camelContext xmlns="http://camel.apache.org/schema/spring">
+    <route id="gets-direct-from-other-route">
+        <from uri="direct:EndService"/>
+        <log message="Got a message from direct route that listens on SY Reply!" />
+        <!--     <to uri="file:///home/rick/Junk/Camel/outFromDirectSvc"/>  -->
+    </route>
+</camelContext>
+
+
+
+
+</beans>
