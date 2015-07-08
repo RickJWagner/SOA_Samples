@@ -1,0 +1,8 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+   <soap:Body>
+      <ns2:SalaryReviewResponse xmlns:ns2="http://www.example.org/SalaryReview/">
+         <name>Rick</name>
+         <salary>100001</salary>
+      </ns2:SalaryReviewResponse>
+   </soap:Body>
+</soap:Envelope>

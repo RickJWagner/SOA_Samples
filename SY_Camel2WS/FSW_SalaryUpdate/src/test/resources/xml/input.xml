@@ -1,0 +1,10 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:sal="http://www.example.org/SalaryReview/">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <sal:SalaryReview>
+         <name>Rick</name>
+         <service>5</service>
+         <salary>100000</salary>
+      </sal:SalaryReview>
+   </soapenv:Body>
+</soapenv:Envelope>
