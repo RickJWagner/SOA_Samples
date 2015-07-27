@@ -26,17 +26,18 @@ else
   exit 1
 fi
 
-# check if rtgov-client is installed
-if [ -e "$FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/activity-server-restc-1.0.1.Final-redhat-4.jar" ]
-then 
+# check if rtgov is installed
+RT_TYPE="none"
+shopt -s nullglob
+set -- "$FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/activity-server-restc*"
+if [ "$#" -gt 0 ]; then
   RT_TYPE="client"
-else 
-  if [ -e "$FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/activity-server-rests-1.0.1.Final-redhat-4.jar" ]
-  then 
+fi
+
+shopt -s nullglob
+set -- "$FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/activity-server-rests*"
+if [ "$#" -gt 0 ]; then
     RT_TYPE="server"
-  else
-    RT_TYPE="none"
-  fi
 fi
 
 echo "RT-GOV installation: $RT_TYPE"
