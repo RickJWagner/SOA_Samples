@@ -457,24 +457,24 @@
                         </connection-definition>
                     </connection-definitions>
                     <admin-objects>
-                        <admin-object class-name="org.apache.activemq.command.ActiveMQQueue" jndi-name="java:/activemq/queue_in" enabled="true" use-java-context="true" pool-name="poolname.***REMOVED***orks.Test.in">
+                        <admin-object class-name="org.apache.activemq.command.ActiveMQQueue" jndi-name="java:/activemq/queue_in" enabled="true" use-java-context="true" pool-name="poolname.someapp.Test.in">
                             <config-property name="PhysicalName">
                                 queue/queue_in
                             </config-property>
                         </admin-object>
-                        <admin-object class-name="org.apache.activemq.command.ActiveMQQueue" jndi-name="java:/activemq/queue_out" enabled="true" use-java-context="true" pool-name="poolname.***REMOVED***orks.Test.out">
+                        <admin-object class-name="org.apache.activemq.command.ActiveMQQueue" jndi-name="java:/activemq/queue_out" enabled="true" use-java-context="true" pool-name="poolname.someapp.Test.out">
                             <config-property name="PhysicalName">
                                 queue/queue_out
                             </config-property>
                         </admin-object>
-                        <admin-object class-name="org.apache.activemq.command.ActiveMQQueue" jndi-name="java:jboss/exported/jms/queue/***REMOVED***orks.CreditingService.RulesEvent.out" enabled="true" use-java-context="true" pool-name="poolname.***REMOVED***orks.CreditingService.RulesEvent.out">
+                        <admin-object class-name="org.apache.activemq.command.ActiveMQQueue" jndi-name="java:jboss/exported/jms/queue/someapp.CreditingService.RulesEvent.out" enabled="true" use-java-context="true" pool-name="poolname.someapp.CreditingService.RulesEvent.out">
                             <config-property name="PhysicalName">
-                                queue/***REMOVED***orks.CreditingService.RulesEvent.out
+                                queue/someapp.CreditingService.RulesEvent.out
                             </config-property>
                         </admin-object>
-                        <admin-object class-name="org.apache.activemq.command.ActiveMQQueue" jndi-name="java:jboss/exported/jms/queue/***REMOVED***orks.CreditingService.RulesEvent.in" enabled="true" use-java-context="true" pool-name="poolname.***REMOVED***orks.CreditingService.RulesEvent.in">
+                        <admin-object class-name="org.apache.activemq.command.ActiveMQQueue" jndi-name="java:jboss/exported/jms/queue/someapp.CreditingService.RulesEvent.in" enabled="true" use-java-context="true" pool-name="poolname.someapp.CreditingService.RulesEvent.in">
                             <config-property name="PhysicalName">
-                                queue/***REMOVED***orks.CreditingService.RulesEvent.in
+                                queue/someapp.CreditingService.RulesEvent.in
                             </config-property>
                         </admin-object>
                     </admin-objects>
@@ -504,9 +504,9 @@
                         </connection-definition>
                     </connection-definitions>
                     <admin-objects>
-                        <admin-object class-name="org.apache.activemq.command.ActiveMQQueue" jndi-name="java:jboss/exported/jms/queue/***REMOVED***orks.LoggingService.Event.in" enabled="true" use-java-context="true" pool-name="poolname.***REMOVED***orks.LoggingService.Event.in">
+                        <admin-object class-name="org.apache.activemq.command.ActiveMQQueue" jndi-name="java:jboss/exported/jms/queue/someapp.LoggingService.Event.in" enabled="true" use-java-context="true" pool-name="poolname.someapp.LoggingService.Event.in">
                             <config-property name="PhysicalName">
-                                queue/***REMOVED***orks.LoggingService.Event.in
+                                queue/someapp.LoggingService.Event.in
                             </config-property>
                         </admin-object>
                     </admin-objects>
