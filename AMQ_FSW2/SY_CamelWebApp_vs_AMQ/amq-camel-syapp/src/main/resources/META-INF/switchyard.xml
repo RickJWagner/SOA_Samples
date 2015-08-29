@@ -10,9 +10,9 @@
     <sca:service name="Greeter" promote="GreeterBean/Greeter">
       <sca:interface.java interface="com.example.switchyard.camel_syapp.Greeter"/>
       <jms:binding.jms name="jms1">
-        <jms:queue>***REMOVED***orks.KPI.service.in</jms:queue>
+        <jms:queue>someapp.KPI.service.in</jms:queue>
         <jms:connectionFactory>java:/jms/CF</jms:connectionFactory>
-        <jms:replyTo>***REMOVED***orks.matching.DoneMWEvent</jms:replyTo>
+        <jms:replyTo>someapp.matching.DoneMWEvent</jms:replyTo>
       </jms:binding.jms>
     </sca:service>
   </sca:composite>

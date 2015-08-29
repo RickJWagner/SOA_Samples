@@ -43,8 +43,8 @@ public class CFTest extends HttpServlet {
 
 	private void sendMsg() {
 
-		//String destinationName = "queue/***REMOVED***orks.KPI.service.in";
-		String destinationName = "amq:/Queue/***REMOVED***orks.KPI.service.in";
+		//String destinationName = "queue/someapp.KPI.service.in";
+		String destinationName = "amq:/Queue/someapp.KPI.service.in";
 		Context ic = null;
 		ConnectionFactory cf = null;
 		Connection connection = null;

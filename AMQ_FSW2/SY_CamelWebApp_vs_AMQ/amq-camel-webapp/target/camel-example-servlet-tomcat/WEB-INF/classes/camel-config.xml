@@ -42,8 +42,8 @@
         <transform>
             <simple>Hello Web Application, how are you? ${date:now:yyyy-MM-dd'T'HH:mm:ss:SSS}</simple>
         </transform>
-        <log message="About to send a message to ***REMOVED***orks.KPI.service.in" />
-        <to uri="activemq:queue:***REMOVED***orks.KPI.service.in"/>
+        <log message="About to send a message to someapp.KPI.service.in" />
+        <to uri="activemq:queue:someapp.KPI.service.in"/>
     </route>
 </camelContext>
 
