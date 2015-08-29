@@ -169,7 +169,7 @@
                     </security>
                 </datasource>
                 <datasource jta="true" jndi-name="java:jboss/datasources/GridReference" pool-name="GridReference" enabled="true" use-java-context="true">
-                    <connection-url>jdbc:postgresql://***REMOVED***:5432/***REMOVED***</connection-url>
+                    <connection-url>jdbc:postgresql://REDACTED</connection-url>
                     <driver>postgres</driver>
                     <transaction-isolation>TRANSACTION_READ_COMMITTED</transaction-isolation>
                     <pool>
@@ -349,7 +349,7 @@
                     <connector name="remote-connector">
                         <factory-class>org.hornetq.core.remoting.impl.netty.NettyConnectorFactory</factory-class>
                         <param key="port" value="5445"/>
-                        <param key="host" value="***REMOVED***.org"/>
+                        <param key="host" value="REDACTED"/>
                     </connector>
                 </connectors>
 
