@@ -435,19 +435,19 @@
                         </connection-definition>
                     </connection-definitions>
                     <admin-objects>
-                        <admin-object class-name="org.apache.activemq.command.ActiveMQQueue" jndi-name="amq:/Queue/***REMOVED***orks.KPI.service.in" use-java-context="true" pool-name="Q1">
+                        <admin-object class-name="org.apache.activemq.command.ActiveMQQueue" jndi-name="amq:/Queue/someapp.KPI.service.in" use-java-context="true" pool-name="Q1">
                             <config-property name="PhysicalName">
-                                ***REMOVED***orks.KPI.service.in
+                                someapp.KPI.service.in
                             </config-property>
                         </admin-object>
-                        <admin-object class-name="org.apache.activemq.command.ActiveMQQueue" jndi-name="amq:/Queue/***REMOVED***orks.matching.Done" use-java-context="true" pool-name="Q2">
+                        <admin-object class-name="org.apache.activemq.command.ActiveMQQueue" jndi-name="amq:/Queue/someapp.matching.Done" use-java-context="true" pool-name="Q2">
                             <config-property name="PhysicalName">
-                                ***REMOVED***orks.matching.Done
+                                someapp.matching.Done
                             </config-property>
                         </admin-object>
-                        <admin-object class-name="org.apache.activemq.command.ActiveMQQueue" jndi-name="amq:/Queue/***REMOVED***orks.matching.DoneMWEvent" use-java-context="true" pool-name="Q3">
+                        <admin-object class-name="org.apache.activemq.command.ActiveMQQueue" jndi-name="amq:/Queue/someapp.matching.DoneMWEvent" use-java-context="true" pool-name="Q3">
                             <config-property name="PhysicalName">
-                                ***REMOVED***orks.matching.DoneMWEvent
+                                someapp.matching.DoneMWEvent
                             </config-property>
                         </admin-object>
                     </admin-objects>
