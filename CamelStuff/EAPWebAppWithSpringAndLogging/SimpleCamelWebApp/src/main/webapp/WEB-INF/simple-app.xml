@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:camel="http://camel.apache.org/schema/spring"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+       http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd
+		http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core.xsd">
+
+	<camelContext id="AlertSMTP" xmlns="http://camel.apache.org/schema/spring" trace="false">
+		<route id="testLogging" autoStartup="true">
+			<from uri="timer://myTimer?repeatCount=100000&amp;delay=5000"/>
+                        <setBody>
+			  <simple>Before logging!  ${date:now:yyyyMMddhhmmss}</simple>
+			</setBody>
+                         <!--
+                        <to uri="file:/home/rick/Junk/Camel/Out/?fileExist=Append"/>
+                         -->
+			<log message="ABC123'\29'12345'\29'Message-Title'\29'Message-Content'\29'autn,title,CSV'\29'2014/09/05 13:41:59'\29'" loggingLevel="WARN"/>
+                        <setBody>
+			  <simple>After logging!  ${date:now:yyyyMMddhhmmss}</simple>
+			</setBody>
+			<to uri="file:/home/rick/Junk/Camel/Out/?fileExist=Append"/>
+		</route>
+</camelContext>
+</beans>
