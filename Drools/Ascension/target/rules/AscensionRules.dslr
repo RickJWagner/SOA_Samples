@@ -1,0 +1,43 @@
+package com.sample
+ 
+import com.sample.DroolsTest.Message;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Map.Entry;
+import Ascension.SupportGuy;
+import Ascension.SupportCase;
+import java.util.Collections;
+
+global HashMap<String, Integer> caseScores;
+
+expander AscensionRules.dsl
+
+rule "SBR match"
+when 
+	The case sbr matches the support engineer's sbr
+then
+	increment score by two
+end
+
+rule "Tag match"
+when 
+	The case tags match the support engineer's tags
+then
+	increment score by one
+end
+
+
+rule "Geo match"
+when 
+	The case geo match the support engineer's geo
+then
+	increment score by one
+end
+
+rule "Mad customer!"
+when 
+	Prioritize customer "BIG"
+then
+	increment score by five
+end
+
