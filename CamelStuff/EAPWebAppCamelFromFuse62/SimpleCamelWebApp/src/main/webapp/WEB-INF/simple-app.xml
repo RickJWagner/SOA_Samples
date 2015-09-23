@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:camel="http://camel.apache.org/schema/spring"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+       http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd
+		http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core.xsd">
+
+	<camelContext id="AlertSMTP" xmlns="http://camel.apache.org/schema/spring" trace="false">
+		<route id="testLogging" autoStartup="true">
+			<from uri="timer://myTimer?repeatCount=100&amp;delay=10000"/>
+                        <setBody>
+			  <simple>Before logging!  ${date:now:yyyyMMddhhmmss}</simple>
+			</setBody>
+			<log message="Hello from web app! ${body}" loggingLevel="WARN"/>
+                        <setBody>
+			  <simple>After logging!  ${date:now:yyyyMMddhhmmss}</simple>
+			</setBody>
+		</route>
+       </camelContext>
+
+
+	<camelContext id="LookForFiles" xmlns="http://camel.apache.org/schema/spring" trace="false">
+		<route id="testLogging" autoStartup="true">
+                        <from uri="ftp://user@some.machine:2121?password=somepassword"/>                        
+			<log message="Found a file! ${body}" loggingLevel="WARN"/>
+                        <to uri="file:/path/to/Camel/Out"/>
+		</route>
+       </camelContext>
+
+
+
+
+
+
+
+
+
+</beans>
