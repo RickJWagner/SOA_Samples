@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<switchyard xmlns="urn:switchyard-config:switchyard:1.0" xmlns:_1="urn:switchyard-component-bean:config:1.0" xmlns:camel="urn:switchyard-component-camel:config:1.0" xmlns:rest="urn:switchyard-component-resteasy:config:1.0" xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912">
+  <sca:composite name="OrderService" targetNamespace="urn:switchyard-quickstart:resteasy-binding:1.0">
+    <sca:component name="Route">
+      <camel:implementation.camel>
+        <camel:xml path="route.xml"/>
+      </camel:implementation.camel>
+      <sca:service name="Saludos">
+        <sca:interface.java interface="com.sample.fsw.sample001.bean.Saludos"/>
+      </sca:service>
+      <sca:reference name="Prueba">
+        <sca:interface.java interface="com.sample.fsw.sample001.bean.Prueba"/>
+      </sca:reference>
+    </sca:component>
+    <sca:service name="Saludos" promote="Route/Saludos">
+      <sca:interface.java interface="com.sample.fsw.sample001.bean.Saludos"/>
+      <rest:binding.rest name="rest-saludos">
+        <rest:interfaces>com.sample.fsw.sample001.bean.Saludos</rest:interfaces>
+        <rest:contextPath>saludar</rest:contextPath>
+      </rest:binding.rest>
+    </sca:service>
+    <sca:component name="PruebaBean">
+      <_1:implementation.bean class="com.sample.fsw.sample001.bean.PruebaBean"/>
+      <sca:service name="Prueba">
+        <sca:interface.java interface="com.sample.fsw.sample001.bean.Prueba"/>
+      </sca:service>
+    </sca:component>
+  </sca:composite>
+  <domain>
+    <properties>
+      <property name="restPort" value="${org.switchyard.component.resteasy.standalone.port:8080}"/>
+      <property name="restPath" value="${org.switchyard.component.resteasy.standalone.path:/rest-binding}"/>
+    </properties>
+  </domain>
+</switchyard>
