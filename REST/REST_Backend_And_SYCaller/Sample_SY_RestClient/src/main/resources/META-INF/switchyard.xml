@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<switchyard xmlns="urn:switchyard-config:switchyard:1.0" xmlns:bean="urn:switchyard-component-bean:config:1.0" xmlns:http="urn:switchyard-component-http:config:1.0" xmlns:rest="urn:switchyard-component-resteasy:config:1.0" xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912">
+  <sca:composite name="OrderService" targetNamespace="urn:switchyard-quickstart:resteasy-binding:1.0">
+    <sca:component name="MemberSvcBean">
+      <bean:implementation.bean class="org.flyingdog.model.MemberSvcBean"/>
+      <sca:service name="MemberSvc">
+        <sca:interface.java interface="org.flyingdog.model.MemberSvc"/>
+      </sca:service>
+      <sca:reference name="MemberResourceRESTService">
+        <sca:interface.java interface="org.flyingdog.services.MemberResourceRESTService"/>
+      </sca:reference>
+    </sca:component>
+    <sca:service name="MemberSvc" promote="MemberSvcBean/MemberSvc">
+      <sca:interface.java interface="org.flyingdog.model.MemberSvc"/>
+      <rest:binding.rest name="member-binding1">
+        <rest:interfaces>org.flyingdog.services.MemberResource</rest:interfaces>
+        <rest:contextPath>member-binding</rest:contextPath>
+      </rest:binding.rest>
+    </sca:service>
+    <sca:reference name="MemberResourceRESTService" multiplicity="0..1" promote="MemberSvcBean/MemberResourceRESTService">
+      <sca:interface.java interface="org.flyingdog.services.MemberResourceRESTService"/>
+      <rest:binding.rest name="Rest_Reference1">
+        <rest:interfaces>org.flyingdog.services.MemberResourceRESTService</rest:interfaces>
+        <rest:address>http://localhost:9080/REST_Svc/rest</rest:address>
+      </rest:binding.rest>
+    </sca:reference>
+  </sca:composite>
+  <domain>
+    <properties>
+      <property name="restPort" value="${org.switchyard.component.resteasy.standalone.port:8080}"/>
+      <property name="restPath" value="${org.switchyard.component.resteasy.standalone.path:/rest-binding}"/>
+    </properties>
+  </domain>
+</switchyard>
