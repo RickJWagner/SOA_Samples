@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?><sy:switchyard xmlns:sy="urn:switchyard-config:switchyard:1.1" xmlns:bean="urn:switchyard-component-bean:config:1.1" xmlns:quartz="urn:switchyard-component-camel-quartz:config:1.1" xmlns:resteasy="urn:switchyard-component-resteasy:config:1.1" xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912" name="A_REST_wBASICAUTH_SY" targetNamespace="urn:org.sample:A_REST_wBASICAUTH_SY:1.0">
+    <sca:composite name="A_REST_wBASICAUTH_SY" targetNamespace="urn:org.sample:A_REST_wBASICAUTH_SY:1.0">
+        <sca:service name="Greeter" promote="GreeterBean/Greeter">
+            <sca:interface.java interface="org.sample.A_REST_wBASICAUTH_SY.Greeter"/>
+            <quartz:binding.quartz name="crontrigger">
+                <sy:operationSelector operationName="greet"/>
+                <quartz:contextMapper includes=".*"/>
+                <quartz:name>crontrigger</quartz:name>
+                <quartz:cron>0/5 * * * * ?</quartz:cron>
+            </quartz:binding.quartz>
+        </sca:service>
+        <sca:reference multiplicity="0..1" name="ExternalSvcCallerResource" promote="GreeterBean/ExternalSvcCallerResource">
+            <sca:interface.java interface="org.sample.A_REST_wBASICAUTH_SY.ExternalSvcCallerResource"/>
+            <resteasy:binding.rest name="rest1">
+                <resteasy:contextMapper includes=".*"/>
+                <resteasy:interfaces>org.sample.A_REST_wBASICAUTH_SY.ExternalSvcCallerResource</resteasy:interfaces>
+                <resteasy:address>http://localhost:8280/A_REST_wBASIC_AUTH/</resteasy:address>
+                <resteasy:basic>
+                    <resteasy:user>guest</resteasy:user>
+                    <resteasy:password>Password1!</resteasy:password>
+                    <resteasy:host>localhost</resteasy:host>
+                    <resteasy:port>8280</resteasy:port>
+                </resteasy:basic>
+            </resteasy:binding.rest>
+        </sca:reference>
+        <sca:component name="GreeterBean">
+            <bean:implementation.bean class="org.sample.A_REST_wBASICAUTH_SY.GreeterBean"/>
+            <sca:service name="Greeter">
+                <sca:interface.java interface="org.sample.A_REST_wBASICAUTH_SY.Greeter"/>
+            </sca:service>
+            <sca:reference name="ExternalSvcCallerResource">
+                <sca:interface.java interface="org.sample.A_REST_wBASICAUTH_SY.ExternalSvcCallerResource"/>
+            </sca:reference>
+        </sca:component>
+    </sca:composite>
+</sy:switchyard>
