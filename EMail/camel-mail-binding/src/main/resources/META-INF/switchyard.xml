@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<switchyard xmlns="urn:switchyard-config:switchyard:1.0" xmlns:_1="urn:switchyard-component-bean:config:1.0" xmlns:camel="urn:switchyard-component-camel:config:1.0" xmlns:mail="urn:switchyard-component-camel-mail:config:1.0" xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912">
+  <sca:composite name="camel-mail-binding" targetNamespace="urn:switchyard-quickstart:camel-mail-binding:0.1.0">
+    <sca:service name="PrintService" promote="PrintService/PrintService">
+      <mail:binding.mail name="MailBinding1" secure="true">
+        <mail:host>imap.gmail.com</mail:host>
+        <mail:username>SomeMailAccountLowSecurity</mail:username>
+        <mail:password>SomePassword</mail:password>
+        <mail:consume accountType="imap">
+          <mail:initialDelay>0</mail:initialDelay>
+          <mail:delay>100</mail:delay>
+          <mail:copyTo>after-processing</mail:copyTo>
+        </mail:consume>
+      </mail:binding.mail>
+    </sca:service>
+    <sca:component name="PrintService">
+      <_1:implementation.bean class="org.switchyard.quickstarts.camel.mail.binding.PrintServiceImpl"/>
+      <sca:service name="PrintService">
+        <sca:interface.java interface="org.switchyard.quickstarts.camel.mail.binding.PrintService"/>
+      </sca:service>
+      <sca:reference name="PrintService2">
+        <sca:interface.java interface="org.switchyard.quickstarts.camel.mail.binding.PrintService2"/>
+      </sca:reference>
+    </sca:component>
+    <sca:component name="PrintService2">
+      <camel:implementation.camel>
+        <camel:xml path="route2.xml"/>
+      </camel:implementation.camel>
+      <sca:service name="PrintService2">
+        <sca:interface.java interface="org.switchyard.quickstarts.camel.mail.binding.PrintService2"/>
+      </sca:service>
+      <sca:reference name="OutgoingPrintService">
+        <sca:interface.java interface="org.switchyard.quickstarts.camel.mail.binding.PrintService"/>
+      </sca:reference>
+    </sca:component>
+  </sca:composite>
+</switchyard>
