@@ -1,0 +1,8 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:sam="http://sample.org/">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <sam:greet>
+         <arg0>RJW</arg0>
+      </sam:greet>
+   </soapenv:Body>
+</soapenv:Envelope>
