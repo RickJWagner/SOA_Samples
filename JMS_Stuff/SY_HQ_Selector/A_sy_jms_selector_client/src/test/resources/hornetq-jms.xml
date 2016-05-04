@@ -1,0 +1,30 @@
+<configuration xmlns="urn:hornetq">
+
+  <connection-factory name="ConnectionFactory">
+      <connectors>
+        <connector-ref connector-name="invm-connector"/>
+      </connectors>
+      
+      <entries>
+         <entry name="ConnectionFactory"/>
+      </entries>
+   </connection-factory>
+   
+   <connection-factory name="JmsXA">
+      <connectors>
+        <connector-ref connector-name="netty-connector"/>
+      </connectors>
+      
+      <entries>
+         <entry name="JmsXA"/>
+      </entries>
+   </connection-factory>
+   
+  <!--  <queue name="GreetingServiceQueue">
+      <entry name="GreetingServiceQueue"/>
+   </queue> -->
+   <queue name="testQueue">
+      <entry name="testQueue"/>
+   </queue>
+   
+</configuration>
