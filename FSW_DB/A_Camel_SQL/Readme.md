@@ -1,4 +1,11 @@
 Introduction
+
+
+>> Dynamically builds up a SQL query in a SY Camel route. <<
+
+
+
+
 ============
 This quickstart demonstrates the usage of the Camel SQL and it's binding feature, by retrieving messages from database and saving it to database. By default quickstart uses dummy datasource deployed under JBoss AS using non-persistent in memory database. It also uses a Quartz binding to generate test records. With typical production scenarios you don't need that.
 
