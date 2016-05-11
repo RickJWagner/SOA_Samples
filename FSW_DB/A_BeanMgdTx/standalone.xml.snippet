@@ -1,0 +1,26 @@
+
+-------------------------------------------  standalone.xml snippet -------------------------------------------
+
+ <datasource jta="false" jndi-name="java:jboss/datasources/MariaDBDS" pool-name="MariaDBDS" enabled="true" spy="false" use-ccm="false">
+                    <connection-url>jdbc:mariadb://localhost:3306</connection-url>
+                    <driver-class>org.mariadb.jdbc.Driver</driver-class>
+                    <driver>mariadb</driver>
+                    <security>
+                        <user-name>rick</user-name>
+                        <password>password</password>
+                    </security>
+                    <validation>
+                        <check-valid-connection-sql>select 1</check-valid-connection-sql>
+                        <validate-on-match>false</validate-on-match>
+                        <background-validation>true</background-validation>
+                        <background-validation-millis>10000</background-validation-millis>
+                    </validation>
+                    <timeout>
+                        <idle-timeout-minutes>1</idle-timeout-minutes>
+                        <allocation-retry>3</allocation-retry>
+                    </timeout>
+                    <statement>
+                        <share-prepared-statements>false</share-prepared-statements>
+                    </statement>
+                </datasource>
+
