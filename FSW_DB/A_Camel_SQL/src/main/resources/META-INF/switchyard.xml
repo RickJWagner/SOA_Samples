@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<switchyard xmlns="urn:switchyard-config:switchyard:1.0" xmlns:swyd="urn:switchyard-config:switchyard:1.0" xmlns:_1="urn:switchyard-component-bean:config:1.0" xmlns:camel="urn:switchyard-component-camel:config:1.0" xmlns:quartz="urn:switchyard-component-camel-quartz:config:1.0" xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912" xmlns:sql="urn:switchyard-component-camel-sql:config:1.0">
+  <sca:composite name="camel-sql-binding" targetNamespace="urn:switchyard-quickstart:camel-sql-binding:0.1.0">
+    <sca:service name="GreetingService" promote="GreetingService/GreetingService">
+      <quartz:binding.quartz>
+        <operationSelector operationName="generate"/>
+        <quartz:name>EveryFiveSecondsJob</quartz:name>
+        <quartz:cron>*/5 * * * * ?</quartz:cron>
+      </quartz:binding.quartz>
+    </sca:service>
+    <sca:reference name="StoreService" multiplicity="0..1" promote="GreetingService/StoreService">
+      <sca:interface.java interface="org.switchyard.quickstarts.camel.sql.binding.SingleGreetService"/>
+      <sql:binding.sql>
+        <sql:contextMapper includes=".*"/>
+        <sql:query>INSERT INTO jpa_tbl (msg1, msg2) VALUES (#,#)</sql:query>
+        <sql:dataSourceRef>java:jboss/datasources/MariaDBDS</sql:dataSourceRef>
+      </sql:binding.sql>
+    </sca:reference>
+    <sca:component name="GreetingService">
+      <camel:implementation.camel>
+        <camel:java class="org.switchyard.quickstarts.camel.sql.binding.GreetingServiceRoute"/>
+      </camel:implementation.camel>
+      <sca:service name="GreetingService">
+        <sca:interface.java interface="org.switchyard.quickstarts.camel.sql.binding.GreetingService"/>
+      </sca:service>
+      <sca:reference name="StoreService">
+        <sca:interface.java interface="org.switchyard.quickstarts.camel.sql.binding.SingleGreetService"/>
+      </sca:reference>
+    </sca:component>
+  </sca:composite>
+</switchyard>
