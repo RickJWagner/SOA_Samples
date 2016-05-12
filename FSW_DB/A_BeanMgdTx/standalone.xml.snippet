@@ -24,3 +24,30 @@
                     </statement>
                 </datasource>
 
+
+                   <driver name="mariadb" module="com.mariadb">
+                        <xa-datasource-class>org.mariadb.jdbc.MariaDbDataSource</xa-datasource-class>
+                    </driver>
+
+
+// Also, make folder system/layers/base/com/mariadb/main put in it mariadb-java-client-1.3.2.jar and this module.xml:
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="urn:jboss:module:1.1" name="com.mariadb">
+
+    <!--
+    <properties>
+        <property name="jboss.api" value="unsupported"/>
+    </properties>
+    -->
+
+    <resources>
+        <resource-root path="mariadb-java-client-1.3.2.jar"/>
+        <!-- Insert resources here -->
+    </resources>
+    <dependencies>
+        <module name="javax.api"/>
+        <module name="javax.transaction.api"/>
+        <module name="javax.servlet.api" optional="true"/>
+    </dependencies>
+</module>
+
