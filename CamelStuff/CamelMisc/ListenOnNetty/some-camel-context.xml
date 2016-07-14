@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Put this in META-INF, test with telnet localhost:5150 -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:camel="http://camel.apache.org/schema/spring"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+       http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd
+		http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core.xsd">
+
+	<camelContext id="TestNetty" xmlns="http://camel.apache.org/schema/spring" trace="false">
+		<route id="testLogging" autoStartup="true">
+
+			<from uri="netty4:tcp://localhost:5150?textline=true"/>
+			<log message="Got a message ${body}" loggingLevel="WARN"/>
+		</route>
+</camelContext>
+</beans>
+
