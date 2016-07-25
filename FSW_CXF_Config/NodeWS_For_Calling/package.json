@@ -1,0 +1,8 @@
+{
+  "name": "cluster-demo",
+  "version": "0.0.1",
+  "dependencies": {
+    "express": "^4.10.6",
+    "soap": "*"
+  }
+}
