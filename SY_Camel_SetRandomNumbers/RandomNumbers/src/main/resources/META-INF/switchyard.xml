@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sy:switchyard xmlns:bean="urn:switchyard-component-bean:config:1.1" xmlns:camel="urn:switchyard-component-camel:config:1.1" xmlns:quartz="urn:switchyard-component-camel-quartz:config:1.1" xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912" xmlns:sy="urn:switchyard-config:switchyard:1.1" name="RandomNumbers" targetNamespace="urn:com.example.switchyard:RandomNumbers:1.0">
+  <sca:composite name="RandomNumbers" targetNamespace="urn:com.example.switchyard:RandomNumbers:1.0">
+    <sca:component name="BlabberBean">
+      <camel:implementation.camel>
+        <camel:xml path="BlabberRoute.xml"/>
+      </camel:implementation.camel>
+      <sca:service name="Blabber">
+        <sca:interface.java interface="org.sample.Blabber"/>
+      </sca:service>
+      <sca:reference name="SecondAction">
+        <sca:interface.java interface="org.sample.SecondAction"/>
+      </sca:reference>
+    </sca:component>
+    <sca:service name="Blabber" promote="BlabberBean/Blabber">
+      <sca:interface.java interface="org.sample.Blabber"/>
+      <quartz:binding.quartz name="Blabber1">
+        <sy:operationSelector operationName="blabber"/>
+        <quartz:contextMapper class="org.sample.SomeMapper" includes=".*"/>
+        <quartz:messageComposer class="org.sample.SomeComposer"/>
+        <quartz:name>Blabber1</quartz:name>
+        <quartz:cron>*/5 * * * * ?</quartz:cron>
+      </quartz:binding.quartz>
+    </sca:service>
+    <sca:component name="SecondActionBean">
+      <bean:implementation.bean class="com.example.switchyard.RandomNumbers.SecondActionBean"/>
+      <sca:service name="SecondAction">
+        <sca:interface.java interface="org.sample.SecondAction"/>
+      </sca:service>
+    </sca:component>
+  </sca:composite>
+</sy:switchyard>
