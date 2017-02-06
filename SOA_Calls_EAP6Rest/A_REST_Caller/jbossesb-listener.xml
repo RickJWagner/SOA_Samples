@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?><!--
+	NOTE: DO NOT MODIFY
+	This file was auto-generated.
+--><jbossesb-listeners parameterReloadSecs="5">
+<listener event-processor="org.jboss.soa.esb.samples.quickstart.scheduler.MyScheduledActionMsgComposer" listenerClass="org.jboss.soa.esb.listeners.ScheduleListener" mep="OneWay" name="my_scheduled_listener" scheduleSimpleExec="2" scheduleSimpleFrequency="3000" scheduleidref="3-sec-trigger" service-category="ScheduledServices" service-description="Demonstrates a basic scheduled service" service-name="MyFirstScheduledService">
+<ScheduleProperties org.quartz.threadPool.threadCount="1"/>
+<action action="first" class="org.jboss.soa.esb.samples.quickstart.scheduler.MyBasicAction" exceptionMethod="exceptionHandler" process="displayMessage2"/>
+<action action="groovy" class="org.jboss.soa.esb.actions.scripting.GroovyActionProcessor" script="/scripts/iTunesTop5.groovy"/>
+<action action="testStore" class="org.jboss.soa.esb.actions.TestMessageStore"/>
+</listener>
+</jbossesb-listeners>
