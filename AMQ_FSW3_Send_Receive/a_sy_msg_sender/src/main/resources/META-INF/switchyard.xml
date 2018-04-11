@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sy:switchyard xmlns:_1="urn:switchyard-component-jca:config:1.0" xmlns:bean="urn:switchyard-component-bean:config:1.0" xmlns:camel="urn:switchyard-component-camel:config:1.0" xmlns:file="urn:switchyard-component-camel-file:config:1.0" xmlns:jms="urn:switchyard-component-camel-jms:config:1.0" xmlns:sca="http://docs.oasis-open.org/ns/opencsa/sca/200912" xmlns:sy="urn:switchyard-config:switchyard:1.0" name="SY_File" targetNamespace="urn:com.flyingdog:switchyard-example:1.0">
+  <sca:composite name="SY_File" targetNamespace="urn:com.flyingdog:switchyard-example:1.0">
+    <sca:component name="CamelServiceRoute">
+      <camel:implementation.camel>
+        <camel:java class="com.flyingdog.CamelServiceRoute"/>
+      </camel:implementation.camel>
+      <sca:service name="Blabber">
+        <sca:interface.java interface="com.flyingdog.Blabber"/>
+      </sca:service>
+      <sca:reference name="OutgoingJMSIF">
+        <sca:interface.java interface="com.flyingdog.OutgoingJMSIF"/>
+      </sca:reference>
+    </sca:component>
+    <sca:service name="Blabber" promote="CamelServiceRoute/Blabber">
+      <sca:interface.java interface="com.flyingdog.Blabber"/>
+      <file:binding.file>
+        <sy:operationSelector operationName="blabber"/>
+        <file:contextMapper/>
+        <file:directory>/home/rick/Junk/Camel/In</file:directory>
+        <file:consume/>
+      </file:binding.file>
+    </sca:service>
+    <sca:reference name="OutgoingJMSIF" multiplicity="0..1" promote="CamelServiceRoute/OutgoingJMSIF">
+      <sca:interface.java interface="com.flyingdog.OutgoingJMSIF"/>
+      <jms:binding.jms name="jms1">
+        <jms:queue>RicksQ1</jms:queue>
+        <jms:connectionFactory>#activemq/ConnectionFactory</jms:connectionFactory>
+      </jms:binding.jms>
+    </sca:reference>
+  </sca:composite>
+</sy:switchyard>
