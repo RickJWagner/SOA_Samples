@@ -1,0 +1,4462 @@
+#!/bin/bash
+
+# FSW_HOME... location of FSW installation (without the jboss-eap-6.1 subdirectory!)
+FSW_HOME=/home/rick/Tools/A/FSW6.0/Install
+
+
+# PATCH_HOME... location of unzipped BZ-1146192.zip from https://access.redhat.com/jbossnetwork/restricted/softwareDownload.html
+PATCH_HOME=/home/rick/Tools/A/FSW6.0/Patches/BZ-1183067
+
+# Are we in the right place?
+
+if [ -e "$FSW_HOME/jboss-eap-6.1/dtgov-sramp-repo-seed-cli-commands.txt" ]
+then
+  echo "FSW_HOME  : $FSW_HOME set correctly"
+else
+  echo "FSW_HOME does not look right"
+  exit 1
+fi
+
+
+if [ -e "$PATCH_HOME/removed-list-base.txt" ]
+then
+  echo "PATCH_HOME: $PATCH_HOME set correctly"
+else
+  echo "PATCH_HOME does not look right"
+  exit 1
+fi
+
+# check if rtgov-client is installed
+if [ -e "$FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/activity-server-restc-1.0.1.Final-redhat-4.jar" ]
+then 
+  RT_TYPE="client"
+else 
+  if [ -e "$FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/activity-server-rests-1.0.1.Final-redhat-4.jar" ]
+  then 
+    RT_TYPE="server"
+  else
+    RT_TYPE="none"
+  fi
+fi
+
+echo "RT-GOV installation: $RT_TYPE"
+echo "-------------------------------------------------"    
+
+echo "Switchyard module before patching: " 
+ls -l $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/common/main/
+
+echo "Removing files from removed-list-base.txt"
+# removed-list-base.txt
+
+rm -rf $FSW_HOME/jboss-eap-6.1/bin/client/jboss-cli-client.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/bin/client/jboss-client.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/jboss-modules.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/com/sun/jsf-impl/main/jsf-impl-2.1.19-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/com/sun/jsf-impl/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/javax/faces/api/main/jboss-jsf-api_2.1_spec-2.1.19.1.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/javax/faces/api/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/apache/httpcomponents/main/httpclient-4.2.1-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/apache/httpcomponents/main/httpcore-4.2.1-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/apache/httpcomponents/main/httpmime-4.2.1-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/apache/httpcomponents/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/apache/xalan/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/apache/xalan/main/serializer-2.7.1-redhat-3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/apache/xalan/main/xalan-2.7.1-redhat-3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/apache/xerces/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/apache/xerces/main/xercesImpl-2.9.1-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/fusesource/jansi/main/jansi-1.9-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/fusesource/jansi/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/hibernate/validator/main/hibernate-validator-4.3.1.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/hibernate/validator/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/aggregate/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/appclient/main/jboss-as-appclient-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/appclient/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/cli/main/jboss-as-cli-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/cli/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/api/main/jboss-as-clustering-api-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/api/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/common/main/jboss-as-clustering-common-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/common/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/ejb3/infinispan/main/jboss-as-clustering-ejb3-infinispan-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/ejb3/infinispan/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/impl/main/jboss-as-clustering-impl-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/impl/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/infinispan/main/jboss-as-clustering-infinispan-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/infinispan/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/jgroups/main/jboss-as-clustering-jgroups-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/jgroups/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/registry/main/jboss-as-clustering-registry-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/registry/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/service/main/jboss-as-clustering-service-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/service/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/singleton/main/jboss-as-clustering-singleton-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/singleton/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/web/infinispan/main/jboss-as-clustering-web-infinispan-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/web/infinispan/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/web/spi/main/jboss-as-clustering-web-spi-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/clustering/web/spi/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/cmp/main/jboss-as-cmp-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/cmp/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/configadmin/main/jboss-as-configadmin-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/configadmin/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/connector/main/jboss-as-connector-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/connector/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/console/eap/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/console/eap/release-stream-1.5.7.Final-redhat-1-resources.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/controller/main/jboss-as-controller-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/controller/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/controller-client/main/jboss-as-controller-client-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/controller-client/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/deployment-repository/main/jboss-as-deployment-repository-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/deployment-repository/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/deployment-scanner/main/jboss-as-deployment-scanner-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/deployment-scanner/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/domain-add-user/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/domain-http-error-context/eap/dir/eap.css
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/domain-http-error-context/eap/dir/favicon.ico
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/domain-http-error-context/eap/dir/images/eap_bg.png
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/domain-http-error-context/eap/dir/images/header_bg.png
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/domain-http-error-context/eap/dir/images/prod_logo.png
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/domain-http-error-context/eap/dir/images/prod_name.png
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/domain-http-error-context/eap/dir/index.html
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/domain-http-error-context/eap/dir/index_win.html
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/domain-http-error-context/eap/dir/noConsoleForAdminModeError.html
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/domain-http-error-context/eap/dir/noConsoleForSlaveDcError.html
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/domain-http-error-context/eap/dir.index
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/domain-http-error-context/eap/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/domain-http-interface/main/jboss-as-domain-http-interface-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/domain-http-interface/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/domain-management/main/jboss-as-domain-management-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/domain-management/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/ee/deployment/main/jboss-as-ee-deployment-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/ee/deployment/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/ee/main/jboss-as-ee-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/ee/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/ejb3/main/jboss-as-ejb3-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/ejb3/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/embedded/main/jboss-as-embedded-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/embedded/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/host-controller/main/jboss-as-host-controller-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/host-controller/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jacorb/main/jboss-as-jacorb-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jacorb/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jaxr/main/jboss-as-jaxr-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jaxr/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jaxrs/main/jboss-as-jaxrs-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jaxrs/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jdr/main/jboss-as-jdr-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jdr/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jdr/main/resources/plugins.properties
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jmx/main/jboss-as-jmx-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jmx/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jpa/hibernate/3/jboss-as-jpa-hibernate3-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jpa/hibernate/3/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jpa/hibernate/4/jboss-as-jpa-hibernate4-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jpa/hibernate/4/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jpa/main/jboss-as-jpa-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jpa/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jpa/spi/main/jboss-as-jpa-spi-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jpa/spi/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jpa/util/main/jboss-as-jpa-util-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jpa/util/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jsf/main/jboss-as-jsf-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jsf/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jsf-injection/1.2/jboss-as-jsf-injection-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jsf-injection/1.2/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jsf-injection/main/jboss-as-jsf-injection-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jsf-injection/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jsr77/main/jboss-as-jsr77-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/jsr77/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/logging/main/jboss-as-logging-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/logging/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/mail/main/jboss-as-mail-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/mail/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/management-client-content/main/jboss-as-management-client-content-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/management-client-content/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/messaging/main/jboss-as-messaging-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/messaging/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/modcluster/main/jboss-as-modcluster-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/modcluster/main/mod_cluster-container-catalina-1.2.4.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/modcluster/main/mod_cluster-container-jbossweb-1.2.4.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/modcluster/main/mod_cluster-container-spi-1.2.4.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/modcluster/main/mod_cluster-core-1.2.4.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/modcluster/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/naming/main/jboss-as-naming-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/naming/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/network/main/jboss-as-network-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/network/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/osgi/http/main/jboss-as-osgi-http-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/osgi/http/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/osgi/jmx/main/jboss-as-osgi-jmx-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/osgi/jmx/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/osgi/jpa/main/jboss-as-osgi-jpa-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/osgi/jpa/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/osgi/jta/main/jboss-as-osgi-jta-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/osgi/jta/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/osgi/main/jboss-as-osgi-service-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/osgi/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/osgi/naming/main/jboss-as-osgi-naming-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/osgi/naming/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/osgi/web/main/jboss-as-osgi-web-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/osgi/web/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/platform-mbean/main/jboss-as-platform-mbean-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/platform-mbean/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/pojo/main/jboss-as-pojo-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/pojo/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/process-controller/main/jboss-as-process-controller-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/process-controller/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/product/eap/dir.index
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/product/eap/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/protocol/main/jboss-as-protocol-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/protocol/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/remoting/main/jboss-as-remoting-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/remoting/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/sar/main/jboss-as-sar-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/sar/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/security/main/jboss-as-security-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/security/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/server/main/jboss-as-server-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/server/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/standalone/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/system-jmx/main/jboss-as-system-jmx-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/system-jmx/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/threads/main/jboss-as-threads-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/threads/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/transactions/main/jboss-as-transactions-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/transactions/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/vault-tool/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/version/main/jboss-as-version-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/version/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/web/main/ecj-3.7.2-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/web/main/jboss-as-web-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/web/main/jbossweb-7.2.2.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/web/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/webservices/main/jboss-as-webservices-server-integration-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/webservices/main/jbossws-cxf-resources-4.1.4.Final-redhat-7-jboss711.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/webservices/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/webservices/server/integration/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/webservices/server/jaxrpc-integration/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/weld/main/jboss-as-weld-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/weld/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/xts/main/jboss-as-xts-7.2.1.Final-redhat-10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/as/xts/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/metadata/main/jboss-metadata-common-7.0.8.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/metadata/main/jboss-metadata-ejb-7.0.8.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/metadata/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/netty/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/netty/main/netty-3.6.6.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/resteasy/resteasy-atom-provider/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/resteasy/resteasy-atom-provider/main/resteasy-atom-provider-2.3.6.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/resteasy/resteasy-cdi/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/resteasy/resteasy-cdi/main/resteasy-cdi-2.3.6.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/resteasy/resteasy-hibernatevalidator-provider/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/resteasy/resteasy-hibernatevalidator-provider/main/resteasy-hibernatevalidator-provider-2.3.6.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/resteasy/resteasy-jackson-provider/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/resteasy/resteasy-jackson-provider/main/resteasy-jackson-provider-2.3.6.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/resteasy/resteasy-jaxb-provider/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/resteasy/resteasy-jaxb-provider/main/resteasy-jaxb-provider-2.3.6.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/resteasy/resteasy-jaxrs/main/async-http-servlet-3.0-2.3.6.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/resteasy/resteasy-jaxrs/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/resteasy/resteasy-jaxrs/main/resteasy-jaxrs-2.3.6.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/resteasy/resteasy-jettison-provider/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/resteasy/resteasy-jettison-provider/main/resteasy-jettison-provider-2.3.6.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/resteasy/resteasy-jsapi/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/resteasy/resteasy-jsapi/main/resteasy-jsapi-2.3.6.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/resteasy/resteasy-multipart-provider/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/resteasy/resteasy-multipart-provider/main/resteasy-multipart-provider-2.3.6.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/resteasy/resteasy-yaml-provider/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/resteasy/resteasy-yaml-provider/main/resteasy-yaml-provider-2.3.6.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/security/negotiation/main/jboss-negotiation-extras-2.2.5.Final-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/security/negotiation/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/vfs/main/jboss-vfs-3.1.0.Final-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/jboss/vfs/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/opensaml/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/opensaml/main/xmltooling-1.3.2-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/picketbox/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/picketbox/main/picketbox-4.0.17.SP2-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/picketbox/main/picketbox-infinispan-4.0.17.SP2-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/picketlink/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/picketlink/main/picketlink-core-2.1.6.3.Final-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/base/org/picketlink/main/picketlink-jbas7-2.1.6.3.Final-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/version.txt
+
+echo "Removing files from removed-list-dtgov"
+# removed-list-dtgov
+
+rm -rf $FSW_HOME/jboss-eap-6.1/dtgov-data/deployment-status.owl
+rm -rf $FSW_HOME/jboss-eap-6.1/dtgov-data/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/dtgov-data/project-review-status.owl
+rm -rf $FSW_HOME/jboss-eap-6.1/dtgov-data/src/main/resources/SRAMPPackage/HttpClientWorkDefinitions.wid
+rm -rf $FSW_HOME/jboss-eap-6.1/dtgov-data/src/main/resources/SRAMPPackage/audio-input-microphone-3.png
+rm -rf $FSW_HOME/jboss-eap-6.1/dtgov-data/src/main/resources/SRAMPPackage/overlord.demo.CheckDeployment-taskform.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/dtgov-data/src/main/resources/SRAMPPackage/overlord.demo.ReviewMeeting-taskform.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/dtgov-data/src/main/resources/SRAMPPackage/overlord.demo.SimpleReleaseProcess.bpmn
+rm -rf $FSW_HOME/jboss-eap-6.1/dtgov-data/src/main/resources/SRAMPPackage/overlord.demo.SimplifiedProjectLifeCycle.bpmn
+rm -rf $FSW_HOME/jboss-eap-6.1/dtgov-data/src/main/resources/SRAMPPackage/run-build-install.png
+rm -rf $FSW_HOME/jboss-eap-6.1/dtgov-data/src/main/resources/SRAMPPackage/user-properties.png
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-project/README.asciidoc
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-project/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-project/project-requirements/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-project/project-requirements/src/main/resources/requirements-doc.txt
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-project/project-review-status-ontology.png
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-project/project-service-api/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-project/project-service-api/src/main/java/org/overlord/dtgov/demos/project/HelloWorld.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-project/project-service-api/src/main/resources/wsdl/helloWorld.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-project/project-service-impl/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-project/project-service-impl/src/main/java/org/overlord/dtgov/demos/project/HelloWorldImpl.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-project/project-service-impl/src/test/java/org/overlord/dtgov/demos/project/HelloWorldTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-project/projectworkflow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-switchyard/Classifiers.png
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-switchyard/Deployments.png
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-switchyard/NotificationEmail.png
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-switchyard/README.asciidoc
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-switchyard/SimpleReleaseProcess.png
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-switchyard/TaskDetail.png
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-switchyard/TaskList.png
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-switchyard/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-switchyard/src/main/java/org/overlord/sramp/demos/switchyard/service/InventoryService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-switchyard/src/main/java/org/overlord/sramp/demos/switchyard/service/InventoryServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-switchyard/src/main/java/org/overlord/sramp/demos/switchyard/service/Item.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-switchyard/src/main/java/org/overlord/sramp/demos/switchyard/service/ItemNotFoundException.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-switchyard/src/main/java/org/overlord/sramp/demos/switchyard/service/Order.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-switchyard/src/main/java/org/overlord/sramp/demos/switchyard/service/OrderAck.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-switchyard/src/main/java/org/overlord/sramp/demos/switchyard/service/OrderService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-switchyard/src/main/java/org/overlord/sramp/demos/switchyard/service/OrderServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-switchyard/src/main/java/org/overlord/sramp/demos/switchyard/service/Transformers.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/dtgov-demos-switchyard/src/main/resources/wsdl/OrderService.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/dtgov/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/configuration/dtgov.properties
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/403.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/beans.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/classlist.mf
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/login.config
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$10.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$11.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$12.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$13.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$14.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$15.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$16.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$17.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$18.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$19.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$20.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$21.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$22.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$23.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$24.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$3.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$4.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$5.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$6.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$7.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$8.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl$9.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/jboss/errai/marshalling/server/impl/ServerMarshallingFactoryImpl.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/App.gwt.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/App.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/ClientMessages.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/animations/AbstractAnimation.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/animations/FadeOutAnimation.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/animations/MoveAnimation.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/beans/DeploymentContentsFilterBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/beans/DeploymentHistoryFilterBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/beans/UiConfiguration.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/events/MouseInEvent.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/events/MouseOutEvent.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/AbstractPage.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/DashboardPage.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/DeploymentContentsPage.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/DeploymentDetailsPage.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/DeploymentHistoryPage.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/DeploymentsPage.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/TaskDetailsPage.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/TaskInboxPage.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/deployments/AddDeploymentDialog.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/deployments/AddDeploymentFormSubmitHandler.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/deployments/DeploymentContentsFilters.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/deployments/DeploymentFilters.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/deployments/DeploymentHistoryFilters.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/deployments/DeploymentStageListBox.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/deployments/DeploymentTable.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/deployments/DeploymentTypeListBox.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/deployments/DerivedArtifactsTable.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/deployments/ExpandedArtifactDetailsLoading.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/deployments/ExpandedArtifactItem.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/deployments/ExpandedArtifactList.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/deployments/ExpandedArtifactSummary.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/deployments/HistoryEventDetailsLoading.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/deployments/HistoryEventItem.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/deployments/HistoryEventsList.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/taskInbox/TaskFormPanel.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/taskInbox/TaskInboxFilters.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/pages/taskInbox/TasksTable.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/services/ApplicationStateKeys.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/services/ApplicationStateService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/services/ConfigurationService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/services/DeploymentsRpcService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/services/HistoryRpcService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/services/NotificationService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/services/TaskInboxRpcService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/services/notification/Notification.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/services/notification/NotificationConstants.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/services/notification/NotificationWidget.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/services/rpc/DelegatingErrorCallback.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/services/rpc/DelegatingRemoteCallback.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/services/rpc/IRpcServiceInvocationHandler.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/util/DOMUtil.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/util/DataBindingDateConverter.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/util/DataBindingIntegerConverter.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/util/DataBindingListCountConverter.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/util/DataBindingParentheticalConverter.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/util/DataBindingTimeConverter.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/util/DtgovJS.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/util/IMouseInOutWidget.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/util/WidgetUtil.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/widgets/common/AbstractFilterListBox.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/widgets/common/DescriptionInlineLabel.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/widgets/common/EditCustomPropertyDialog.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/widgets/common/EditableInlineLabel.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/widgets/common/EditableInlineLabelPopover.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/local/widgets/common/LoggedOutDialog.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/ArtifactHistoryBean.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/ArtifactHistoryBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/Constants.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/Constants.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/DeploymentBean.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/DeploymentBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/DeploymentResultSetBean.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/DeploymentResultSetBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/DeploymentSummaryBean.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/DeploymentSummaryBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/DeploymentsFilterBean.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/DeploymentsFilterBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/DerivedArtifactSummaryBean.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/DerivedArtifactSummaryBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/DerivedArtifactsBean.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/DerivedArtifactsBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/ExpandedArtifactSummaryBean.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/ExpandedArtifactSummaryBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/ExpandedArtifactsBean.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/ExpandedArtifactsBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/HistoryEventBean.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/HistoryEventBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/HistoryEventSummaryBean.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/HistoryEventSummaryBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/NotificationBean.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/NotificationBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/NotificationType.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/NotificationType.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/TaskActionEnum.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/TaskActionEnum.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/TaskBean.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/TaskBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/TaskInboxFilterBean.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/TaskInboxFilterBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/TaskInboxResultSetBean.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/TaskInboxResultSetBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/TaskOwnerEnum.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/TaskOwnerEnum.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/TaskSummaryBean.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/beans/TaskSummaryBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/exceptions/DtgovUiException.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/exceptions/DtgovUiException.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/services/IDeploymentsService.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/services/IDeploymentsService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/services/IHistoryService.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/services/IHistoryService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/services/ITaskInboxService.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/client/shared/services/ITaskInboxService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/DtgovUI.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/DtgovUIConfig$DeploymentStage.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/DtgovUIConfig.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/filters/LocaleFilter.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/i18n/Messages.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/i18n/messages.properties
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/services/DeploymentsService.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/services/HistoryService.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/services/TaskInboxService.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/services/sramp/BasicAuthenticationProvider.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/services/sramp/NoAuthenticationProvider.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/services/sramp/SAMLBearerTokenAuthenticationProvider.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/services/sramp/SrampApiClientAccessor.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/services/tasks/BasicAuthenticationProvider.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/services/tasks/DtGovTaskApiClient.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/services/tasks/ITaskClient.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/services/tasks/NoAuthenticationProvider.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/services/tasks/SAMLBearerTokenAuthenticationProvider.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/services/tasks/TaskClientAccessor.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/servlets/DeploymentDownloadServlet.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/servlets/DeploymentUploadServlet.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/servlets/UiConfigurationServlet.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/classes/org/overlord/dtgov/ui/server/util/ExceptionUtils.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/deploy/app/rpcPolicyManifest/manifest.txt
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/jboss-web.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/activation-1.1.1-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/aether-api-1.13.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/aether-impl-1.13.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/aether-spi-1.13.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/aether-util-1.13.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/aopalliance-1.0.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/apache-mime4j-0.6-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/bcel-5.2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/commons-beanutils-1.8.3.redhat-3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/commons-codec-1.4-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/commons-collections-3.2.1-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/commons-compress-1.4.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/commons-configuration-1.6-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/commons-fileupload-1.2.2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/commons-io-2.1-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/commons-lang-2.6-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/commons-lang3-3.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/commons-logging-1.1.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/commons-logging-api-1.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/dom4j-1.6.1-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/dtgov-common-1.0.1.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/dtgov-task-api-1.0.1.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/dtgov-task-client-1.0.1.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/errai-bus-2.4.1.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/errai-cdi-client-2.4.1.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/errai-codegen-2.4.1.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/errai-codegen-gwt-2.4.1.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/errai-common-2.4.1.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/errai-config-2.4.1.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/errai-ioc-2.4.1.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/errai-ioc-bus-support-2.4.1.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/errai-jboss-as-support-2.4.1.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/errai-marshalling-2.4.1.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/errai-ui-2.4.1.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/errai-weld-integration-2.4.1.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/guava-13.0.1-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/guice-3.0-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/httpclient-4.2.1-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/httpcore-4.2.1-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/istack-commons-runtime-2.6.1-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/jackson-core-asl-1.9.9-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/jackson-mapper-asl-1.9.9-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/jakarta-regexp-1.4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/javassist-3.15.0-GA-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/javax.inject-1-redhat-3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/jboss-annotations-api_1.1_spec-1.0.1.Final-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/jboss-el-api_2.2_spec-1.0.2.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/jboss-jaxb-api_2.2_spec-1.0.4.Final-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/jboss-jaxrs-api_1.1_spec-1.0.1.Final-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/jboss-logging-3.1.2.GA-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/jcip-annotations-1.0-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/jcl-over-slf4j-1.7.2-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/jgroups-3.2.10.Final-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/joda-time-1.6.2-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/jsoup-1.6.1-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/lesscss-1.3.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/log4j-1.2.16-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/maven-aether-provider-3.0.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/maven-artifact-3.0.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/maven-core-3.0.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/maven-model-3.0.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/maven-model-builder-3.0.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/maven-plugin-api-3.0.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/maven-repository-metadata-3.0.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/maven-settings-3.0.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/maven-settings-builder-3.0.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/mvel2-2.1.7.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/org.apache.stanbol.enhancer.engines.htmlextractor-0.10.0.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/org.osgi.compendium-4.2.0-redhat-3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/org.osgi.core-4.2.0-redhat-3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/overlord-commons-config-1.1.0-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/overlord-commons-gwt-1.1.0-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/overlord-commons-uiheader-1.1.0-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/plexus-cipher-1.4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/plexus-classworlds-2.4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/plexus-component-annotations-1.5.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/plexus-interpolation-1.14.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/plexus-sec-dispatcher-1.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/plexus-utils-3.0.9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/rdf.core-0.12-incubating.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/reflections-2.4.1.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/relaxngDatatype-2011.1-redhat-6.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/rhino-1.7R4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/s-ramp-api-0.3.1.Final-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/s-ramp-atom-0.3.1.Final-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/s-ramp-client-0.3.1.Final-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/s-ramp-common-0.3.1.Final-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/s-ramp-integration-java-0.3.1.Final-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/s-ramp-integration-switchyard-0.3.1.Final-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/s-ramp-ui-widgets-0.3.1.Final-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/scannotation-1.0.2-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/sisu-guice-3.0.3-no_aop.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/sisu-inject-bean-2.2.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/sisu-inject-plexus-2.2.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/slf4j-api-1.7.2-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/slf4j-ext-1.7.2-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/slf4j-log4j12-1.7.2-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/txw2-20110809-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/utils-0.1-incubating.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/wymiwyg-commons-core-0.7.6.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/lib/xz-1.0.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/picketlink.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/WEB-INF/web.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/app/076A634AAFB3DF93BCE0A9BF1AFE8321.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/app/2172852F09D7A46ED04F4171FCF46C45.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/app/29233F36939793A027D041EBB6388AD2.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/app/4E8EEF2F3B628BEA4923C7B66137C1EC.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/app/9FFA1693F2FDBA7F8AED1996DE055301.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/app/DF27543CC4A9EE00BA8B4F461A06CBF3.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/app/app.nocache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/app/clear.cache.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/app/hosted.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/app/junit-standards.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/app/junit.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/css/bootstrap-datepicker.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/css/bootstrap-fileupload.min.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/css/bootstrap-responsive.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/css/bootstrap-responsive.min.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/css/bootstrap.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/css/bootstrap.min.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/img/glyphicons-halflings-white.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/img/glyphicons-halflings.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/bootstrap-datepicker.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/bootstrap-fileupload.min.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/bootstrap.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/bootstrap.min.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.bg.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.ca.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.cs.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.da.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.de.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.el.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.es.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.fi.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.fr.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.he.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.hr.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.id.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.is.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.it.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.ja.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.kr.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.lt.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.lv.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.ms.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.nb.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.nl.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.pl.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.pt-BR.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.pt.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.ro.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.rs-latin.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.rs.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.ru.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.sk.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.sl.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.sv.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.sw.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.th.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.tr.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.uk.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.zh-CN.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/bootstrap-2.3.1/js/locales/bootstrap-datepicker.zh-TW.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/css/branding.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/css/dtgov-ui-responsive.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/css/dtgov-ui.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/images/event-delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/images/event-edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/images/event-new.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/images/gradient-bg.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/images/map-icon.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/images/modal-header-bg.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/images/shoebox-icon.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/images/spinner_16.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/images/wrench-icon.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/index.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/jquery-1.8.3/jquery-1.8.3.min.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/js/dtgov-ui-responsive.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov-ui.war/logout.jsp
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/beans.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/governance-email-templates/deployed.body.tmpl
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/governance-email-templates/deployed.subject.tmpl
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/governance.config.txt
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/dtgov/jbpm/ejb/ProcessBean.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/dtgov/jbpm/ejb/ProcessOperationException.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/dtgov/jbpm/ejb/WorkflowConfigurationException.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/dtgov/jbpm/util/ApplicationScopedProducer$EmInvocationHandler.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/dtgov/jbpm/util/ApplicationScopedProducer.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/dtgov/jbpm/util/CDIUtil.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/dtgov/jbpm/util/CustomIdentityProvider.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/dtgov/jbpm/util/DTGovUserGroupCallback.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/dtgov/jbpm/util/HttpClientWorkItemHandler$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/dtgov/jbpm/util/HttpClientWorkItemHandler.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/dtgov/jbpm/util/KieSrampUtil.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/dtgov/jbpm/util/ProcessEngineService.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/dtgov/jbpm/util/Sramp.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/dtgov/jbpm/util/SrampKModuleDeploymentService.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/dtgov/jbpm/web/ProcessServlet.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/dtgov/server/filters/LocaleFilter.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/dtgov/server/i18n/Messages.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/dtgov/server/i18n/messages.properties
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/dtgov/taskapi/TaskApi.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/dtgov/taskapi/TaskSummaryComparator.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/ConfigException.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/Governance.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/GovernanceConstants.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/GovernanceServlet.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/NotificationDestinations.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/Queries.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/Query.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/QueryExecutor.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/Release.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/SRAMPMonitor.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/SlashDecoder.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/SrampAtomApiClientFactory.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/Target$TYPE.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/Target.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/ValueEntity.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/auth/BasicAuthenticationProvider.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/services/DeploymentResource$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/services/DeploymentResource.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/services/GovernanceApplication.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/services/MavenRepoUtil.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/services/NotificationResource.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/services/UpdateMetaDataResource.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/services/rhq/CreateCBRRequest.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/services/rhq/RHQDeployUtil.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/services/rhq/Resource.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/shell/commands/Dir2BrmsCommand$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/shell/commands/Dir2BrmsCommand.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/shell/commands/GovernanceShellCommandProvider.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/shell/commands/Pkg2SrampCommand.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/workflow/BpmManager.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/workflow/Multipart.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/workflow/WorkflowException.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/workflow/WorkflowFactory.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/workflow/brms/JbpmManager.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/workflow/brms/JbpmRestClient.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/workflow/jbpm/EmbeddedJbpmManager.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/classes/org/overlord/sramp/governance/workflow/jbpm/ProcessService.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/jboss-deployment-structure.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/jboss-web.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/aether-api-1.13.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/aether-connector-file-1.13.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/aether-connector-wagon-1.13.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/aether-impl-1.13.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/aether-spi-1.13.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/aether-util-1.13.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/ant-1.8.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/ant-launcher-1.8.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/antlr-2.7.7-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/antlr-runtime-3.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/asm-3.3.1-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/asm-analysis-3.3.1-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/asm-commons-3.3.1-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/asm-tree-3.3.1-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/asm-util-3.3.1-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/async-http-client-1.6.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/bcel-5.2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/btm-2.1.4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/cal10n-api-0.7.3-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/cdi-api-1.0-SP4-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/commons-beanutils-1.8.3.redhat-3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/commons-compress-1.4.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/commons-lang3-3.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/commons-logging-1.1.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/drools-compiler-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/drools-core-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/drools-persistence-jpa-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/dtgov-common-1.0.1.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/dtgov-task-api-1.0.1.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/ecj-3.7.2-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/freemarker-2.3.19-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/groovy-1.8.4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/hamcrest-core-1.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/hamcrest-library-1.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/httpmime-4.2.1-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/jakarta-regexp-1.4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/javax.inject-1-redhat-3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/jboss-annotations-api_1.1_spec-1.0.1.Final-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/jboss-el-api_2.2_spec-1.0.2.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/jboss-interceptors-api_1.1_spec-1.0.1.Final-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/jboss-jacc-api_1.4_spec-1.0.2.Final-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/jbpm-audit-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/jbpm-bpmn2-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/jbpm-flow-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/jbpm-flow-builder-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/jbpm-human-task-audit-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/jbpm-human-task-core-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/jbpm-human-task-workitems-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/jbpm-kie-services-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/jbpm-persistence-jpa-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/jbpm-runtime-manager-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/jbpm-shared-services-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/jcl-over-slf4j-1.7.2-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/joda-time-1.6.2-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/jta-1.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/kie-api-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/kie-ci-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/kie-internal-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/lucene-analyzers-common-4.0.0.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/lucene-core-4.0.0.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/lucene-queries-4.0.0.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/lucene-queryparser-4.0.0.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/lucene-sandbox-4.0.0.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/mail-1.4.5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/maven-aether-provider-3.0.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/maven-artifact-3.0.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/maven-compat-3.0.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/maven-core-3.0.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/maven-model-3.0.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/maven-model-builder-3.0.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/maven-plugin-api-3.0.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/maven-repository-metadata-3.0.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/maven-settings-3.0.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/maven-settings-builder-3.0.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/mvel2-2.1.7.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/overlord-commons-config-1.1.0-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/plexus-cipher-1.4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/plexus-classworlds-2.4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/plexus-component-annotations-1.5.5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/plexus-interpolation-1.14.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/plexus-sec-dispatcher-1.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/plexus-utils-3.0.9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/protobuf-java-2.5.0.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/rest-assured-1.7.2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/resteasy-atom-provider-2.3.6.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/resteasy-jaxb-provider-2.3.6.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/s-ramp-api-0.3.1.Final-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/s-ramp-atom-0.3.1.Final-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/s-ramp-client-0.3.1.Final-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/s-ramp-common-0.3.1.Final-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/s-ramp-integration-java-0.3.1.Final-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/s-ramp-integration-kie-0.3.1.Final-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/s-ramp-integration-switchyard-0.3.1.Final-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/s-ramp-integration-teiid-0.3.1.Final-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/s-ramp-shell-api-0.3.1.Final-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/s-ramp-wagon-0.3.1.Final-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/seam-persistence-3.1.0.Final.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/seam-persistence-api-3.1.0.Final.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/seam-transaction-3.1.0.Final.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/seam-transaction-api-3.1.0.Final.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/sisu-guice-3.0.3-no_aop.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/sisu-inject-bean-2.2.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/sisu-inject-plexus-2.2.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/slf4j-log4j12-1.7.2-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/slf4j-nop-1.7.2-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/solder-api-3.2.1.Final.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/solder-impl-3.2.1.Final.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/solder-logging-3.2.1.Final.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/tagsoup-1.2.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/wagon-ahc-1.2.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/wagon-provider-api-1.0-beta-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/weld-api-1.1.Final-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/weld-core-1.1.13.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/weld-spi-1.1.Final-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/xmlpull-1.1.3.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/xpp3_min-1.1.4c-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/xstream-1.4.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/lib/xz-1.0.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/WEB-INF/web.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/dtgov.war/startProcess.jsp
+
+
+
+if [ $RT_TYPE = "client" ]
+then
+   echo "Removing files from removed-list-rtgov-client"
+   # removed-list-rtgov-client
+
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/mvel/mvel2/main/module.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/mvel/mvel2/main/mvel2-2.1.7.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/commons/overlord-commons-auth/main/module.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/commons/overlord-commons-auth/main/overlord-commons-auth-1.1.0-redhat-7.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/rtgov/main/acs-epn-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/rtgov/main/active-collection-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/rtgov/main/activity-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/rtgov/main/analytics-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/rtgov/main/ep-core-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/rtgov/main/ep-drools-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/rtgov/main/ep-mvel-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/rtgov/main/epn-core-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/rtgov/main/module.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/rtgov/main/rtgov-common-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/WEB-INF/jboss-web.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/WEB-INF/picketlink.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/WEB-INF/web.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/hosted/index.jsp
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/index.jsp
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/login-error.html
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/login.html
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/resources/idp-responsive.css
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/resources/idp.css
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/resources/images/login-background-phone.jpg
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/resources/images/login-background-phone_rh.jpg
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/resources/images/login-background.jpg
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/resources/images/login-background_rh.jpg
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/resources/images/login-screen-logo_rh.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/resources/images/logo-type_rh.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/resources/jquery-1.9.1/jquery.min.js
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war.dodeploy
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/beans.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/active-collection-jee-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/activity-client-jee-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/activity-server-restc-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/collector-activity-server-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/commons-codec-1.4-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/overlord-commons-config-1.1.0-redhat-7.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/rtgov-client-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/rtgov-infinispan-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/rtgov-jbossas-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/rtgov-switchyard-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war.dodeploy
+fi
+
+if [ $RT_TYPE = "server" ]
+then
+
+   echo "Removing files from removed-list-rtgov-server"
+   # removed-list-rtgov-server
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/drools/main/drools-compiler-6.0.0-redhat-9.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/drools/main/drools-core-6.0.0-redhat-9.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/drools/main/drools-decisiontables-6.0.0-redhat-9.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/drools/main/drools-persistence-jpa-6.0.0-redhat-9.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/drools/main/drools-templates-6.0.0-redhat-9.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/drools/main/module.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/eclipse/jdt/core/compiler/main/ecj-3.7.2-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/eclipse/jdt/core/compiler/main/module.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-audit-6.0.0-redhat-9.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-bpmn2-6.0.0-redhat-9.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-flow-6.0.0-redhat-9.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-flow-builder-6.0.0-redhat-9.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-human-task-core-6.0.0-redhat-9.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-human-task-workitems-6.0.0-redhat-9.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-kie-services-6.0.0-redhat-9.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-meta-inf-6.0.0-redhat-9.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-persistence-jpa-6.0.0-redhat-9.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-runtime-manager-6.0.0-redhat-9.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-shared-services-6.0.0-redhat-9.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-workitems-6.0.0-redhat-9.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/module.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/kie/main/kie-api-6.0.0-redhat-9.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/kie/main/kie-internal-6.0.0-redhat-9.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/kie/main/module.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/mvel/mvel2/main/module.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/mvel/mvel2/main/mvel2-2.1.7.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/commons/overlord-commons-auth/main/module.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/commons/overlord-commons-auth/main/overlord-commons-auth-1.1.0-redhat-7.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/rtgov/main/acs-epn-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/rtgov/main/active-collection-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/rtgov/main/activity-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/rtgov/main/analytics-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/rtgov/main/ep-core-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/rtgov/main/ep-drools-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/rtgov/main/ep-mvel-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/rtgov/main/epn-core-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/rtgov/main/module.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/overlord/rtgov/main/rtgov-common-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/Readme.txt
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/activityclient/Readme.txt
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/activityclient/pom.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/activityclient/src/main/java/org/overlord/rtgov/samples/jbossas/activityclient/ActivityClient.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/activityclient/src/main/resources/txns/OrderButter.json
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/activityclient/src/main/resources/txns/OrderJam.json
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/activityclient/src/main/resources/txns/Transactions.properties
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/Readme.txt
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/pom.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/main/java/org/overlord/rtgov/quickstarts/demos/orders/DeliveryAck.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/main/java/org/overlord/rtgov/quickstarts/demos/orders/InventoryService.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/main/java/org/overlord/rtgov/quickstarts/demos/orders/InventoryServiceBean.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/main/java/org/overlord/rtgov/quickstarts/demos/orders/Item.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/main/java/org/overlord/rtgov/quickstarts/demos/orders/ItemNotFoundException.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/main/java/org/overlord/rtgov/quickstarts/demos/orders/LogisticsService.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/main/java/org/overlord/rtgov/quickstarts/demos/orders/LogisticsServiceBean.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/main/java/org/overlord/rtgov/quickstarts/demos/orders/Order.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/main/java/org/overlord/rtgov/quickstarts/demos/orders/OrderAck.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/main/java/org/overlord/rtgov/quickstarts/demos/orders/OrderService.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/main/java/org/overlord/rtgov/quickstarts/demos/orders/OrderServiceBean.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/main/java/org/overlord/rtgov/quickstarts/demos/orders/Payment.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/main/java/org/overlord/rtgov/quickstarts/demos/orders/Receipt.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/main/java/org/overlord/rtgov/quickstarts/demos/orders/Transformers.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/main/java/org/overlord/rtgov/quickstarts/demos/orders/interceptors/ExchangeValidator.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/main/java/org/overlord/rtgov/quickstarts/demos/orders/interceptors/PolicyEnforcer.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/main/resources/wsdl/OrderService.wsdl
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/test/java/org/overlord/rtgov/quickstarts/demos/orders/OrdersClient.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/test/resources/xml/fredpay.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/test/resources/xml/order1.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/test/resources/xml/order2.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/test/resources/xml/order3.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/app/src/test/resources/xml/order4.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/ip/Readme.txt
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/ip/pom.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/ip/src/main/resources/ip.json
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/ordermgmt/pom.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/policy/async/Readme.txt
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/policy/async/pom.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/policy/async/src/main/resources/AssessCredit.mvel
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/policy/async/src/main/resources/epn.json
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/policy/async/src/test/java/org/overlord/rtgov/samples/policy/async/EPNTest.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/policy/async/src/test/resources/rtgov-infinispan.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/policy/pom.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/policy/sync/Readme.txt
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/policy/sync/pom.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/policy/sync/src/main/resources/VerifyLastUsage.mvel
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/policy/sync/src/main/resources/av.json
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/policy/sync/src/test/java/org/overlord/rtgov/samples/policy/sync/AISTest.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/policy/sync/src/test/resources/rtgov-infinispan.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/pom.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/sla/epn/Readme.txt
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/sla/epn/pom.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/sla/epn/src/main/resources/SLAViolation.drl
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/sla/epn/src/main/resources/epn.json
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/sla/monitor/Readme.txt
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/sla/monitor/pom.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/sla/monitor/src/main/java/org/overlord/rtgov/samples/jbossas/slamonitor/monitor/SLAMonitor.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/sla/monitor/src/main/java/org/overlord/rtgov/samples/jbossas/slamonitor/monitor/SLAMonitorApplication.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/sla/monitor/src/main/webapp/WEB-INF/web.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/sla/pom.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/sla/report/Readme.txt
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/sla/report/pom.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/sla/report/src/main/resources/SLAReport.mvel
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/sla/report/src/main/resources/reports.json
+	rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/rtgov/sla/report/src/test/java/org/overlord/rtgov/reports/sla/SLAReportTest.java
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/WEB-INF/jboss-web.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/WEB-INF/picketlink.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/WEB-INF/web.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/hosted/index.jsp
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/index.jsp
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/resources/idp-responsive.css
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/resources/idp.css
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/resources/images/login-background-phone.jpg
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/resources/images/login-background-phone_rh.jpg
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/resources/images/login-background.jpg
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/resources/images/login-background_rh.jpg
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/resources/images/login-screen-logo_rh.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war/resources/images/logo-type_rh.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-commons-idp.war.dodeploy
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/Application/clear.cache.gif
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/Application/gwt/standard/images/corner.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/Application/gwt/standard/images/corner_ie6.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/Application/gwt/standard/images/hborder.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/Application/gwt/standard/images/hborder_ie6.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/Application/gwt/standard/images/ie6/corner_dialog_topleft.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/Application/gwt/standard/images/ie6/corner_dialog_topright.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/Application/gwt/standard/images/ie6/hborder_blue_shadow.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/Application/gwt/standard/images/ie6/hborder_gray_shadow.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/Application/gwt/standard/images/ie6/vborder_blue_shadow.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/Application/gwt/standard/images/ie6/vborder_gray_shadow.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/Application/gwt/standard/images/splitPanelThumb.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/Application/gwt/standard/images/vborder.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/Application/gwt/standard/images/vborder_ie6.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/Application/gwt/standard/standard.css
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/Application/gwt/standard/standard_rtl.css
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/Application/gwt-log-triangle-10x10.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/Application.css
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/authorize.jsp
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/config/oauth.json
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/config/oauth2.json
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/gwt-proxy.properties
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/log4j.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/apache/shindig/sample/container/SampleContainerGuiceModule.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/apache/shindig/sample/container/SampleContainerHandler.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/apache/shindig/sample/shiro/SampleShiroRealm.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/apache/shindig/sample/shiro/ShiroGuiceModule.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/ApplicationEntryPoint$1.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/ApplicationEntryPoint$2.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/ApplicationEntryPoint.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/ApplicationModule.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/ApplicationPlaceManager.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/ApplicationProperties.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/ApplicationUI.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/BootstrapContext.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/NameTokens.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/URLBuilder.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/auth/CurrentUser.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/model/JSOModel.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/model/JSOParser.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/presenter/IndexPresenter$1.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/presenter/IndexPresenter$IndexProxy.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/presenter/IndexPresenter$IndexView.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/presenter/IndexPresenter.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/presenter/StorePresenter$1.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/presenter/StorePresenter$StoreProxy.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/presenter/StorePresenter$StoreView.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/presenter/StorePresenter.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/util/RestfulInvoker$Response.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/util/RestfulInvoker.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/util/UUID.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/view/Footer$1.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/view/Footer.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/view/IndexViewImpl$1.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/view/IndexViewImpl$2.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/view/IndexViewImpl.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/view/StoreViewImpl$1.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/view/StoreViewImpl.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/AddTabForm$1.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/AddTabForm$DialogUiBinder.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/AddTabForm.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/ListItem.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/MessageWindow$WindowUiBinder.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/MessageWindow.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/PortalLayout.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/Portlet$1.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/Portlet$2$1.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/Portlet$2.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/Portlet$3.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/Portlet$4.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/Portlet$5.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/Portlet$6.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/Portlet$7$1.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/Portlet$7.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/Portlet$8.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/Portlet$PortletUiBinder.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/Portlet.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/ProgressBar.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/StoreItem$1$1.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/StoreItem$1.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/StoreItem$StoreItemUiBinder.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/StoreItem.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/TabLayout$1.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/TabLayout$2.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/TabLayout$TabLayoutUiBinder.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/TabLayout.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/client/widgets/UnorderedList.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/EncryptedBlobSecurityTokenService.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/GadgetMetadataService.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/GadgetServerModule.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/GsonFactory.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/RestApplication.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/SQLDateTypeAdapter.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/SecurityTokenService.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/ShindigGadgetMetadataService.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/StoreController.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/UserController.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/filters/JSONPFilter$1.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/filters/JSONPFilter.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/http/AuthenticatingHttpFetcher.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/http/auth/AuthenticationConstants.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/http/auth/AuthenticationModule.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/http/auth/AuthenticationProvider.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/http/auth/AuthorizationHeaderAuthenticationProvider.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/http/auth/BasicAuthenticationProvider.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/http/auth/HttpHeaderAuthenticationProvider.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/http/auth/NoAuthenticationProvider.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/http/auth/SAMLBearerTokenAuthenticationProvider.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/listeners/ShindigResteasyBootstrapServletContextListener.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/servlets/RestProxyAuthProvider.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/servlets/RestProxyBasicAuthProvider.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/servlets/RestProxySAMLBearerTokenAuthProvider.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/server/servlets/RestProxyServlet.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/shared/dto/PageModel.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/shared/dto/PageResponse.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/shared/dto/Pair.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/shared/dto/StoreItemModel.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/shared/dto/UserModel.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/shared/dto/UserPreference$Option.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/shared/dto/UserPreference$Type.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/shared/dto/UserPreference$UserPreferenceSetting.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/shared/dto/UserPreference.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/org/overlord/gadgets/web/shared/dto/WidgetModel.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/classes/security_token_encryption_key.txt
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/deploy/Application/rpcPolicyManifest/manifest.txt
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/jboss-deployment-structure.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/jboss-web.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/activation-1.1.1-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/antlr-2.7.7-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/aopalliance-1.0.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/args4j-2.0.12-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/caja-r4527.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/closure-compiler-r1741.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/commons-beanutils-1.8.3.redhat-3.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/commons-codec-1.4-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/commons-collections-3.2.1-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/commons-configuration-1.6-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/commons-fileupload-1.2.2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/commons-io-2.1-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/commons-lang-2.6-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/commons-lang3-3.1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/commons-logging-1.1.1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/dom4j-1.6.1-redhat-5.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/ehcache-core-2.5.1-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/el-api-6.0.33.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/gadget-core-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/geronimo-stax-api_1.0_spec-1.0.1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/gin-1.5.0-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/gson-1.7.2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/guava-10.0.1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/guice-3.0-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/guice-assistedinject-3.0-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/guice-multibindings-3.0.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/gwt-log-3.1.3-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/gwt-servlet-2.5.0-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/gwtp-build-tools-0.7-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/gwtp-clients-common-0.7-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/gwtp-mvp-client-0.7-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/h2-1.3.168-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/hibernate-commons-annotations-4.0.1.Final-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/hibernate-core-4.2.0.SP1-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/hibernate-entitymanager-4.2.0.SP1-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/hibernate-jpa-2.0-api-1.0.1.Final-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/htmlparser-r4209.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/httpclient-4.2.1-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/httpcore-4.2.1-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/icu4j-3.4.5.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/jackson-core-asl-1.9.9-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/jackson-jaxrs-1.9.9-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/jackson-mapper-asl-1.9.9-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/jackson-xc-1.9.9-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/jarjar-1.1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/jasper-el-6.0.33.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/javassist-3.15.0-GA-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/javax.inject-1-redhat-3.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/jboss-annotations-api_1.1_spec-1.0.1.Final-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/jboss-jaxrs-api_1.1_spec-1.0.1.Final-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/jboss-logging-3.1.2.GA-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/jboss-servlet-api_3.0_spec-1.0.2.Final-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/jboss-transaction-api_1.1_spec-1.0.1.Final-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/jcip-annotations-1.0-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/jcl-over-slf4j-1.7.2-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/jdom-1.0.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/joda-time-1.6.2-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/json-20070829.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/json-simple-1.1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/jsr305-1.3.9-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/juel-impl-2.2.4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/modules-0.3.2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/nekohtml-1.9.14.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/oauth-20100527.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/oauth-consumer-20090617.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/oauth-httpclient4-20090913.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/oauth-provider-20100527.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/overlord-commons-auth-1.1.0-redhat-7.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/overlord-commons-config-1.1.0-redhat-7.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/overlord-commons-uiheader-1.1.0-redhat-7.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/protobuf-java-2.5.0.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/resteasy-guice-2.3.6.Final-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/resteasy-jackson-provider-2.3.6.Final-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/resteasy-jaxrs-2.3.6.Final-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/rome-1.0.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/sanselan-0.97-incubator.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/scannotation-1.0.2-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/shindig-common-3.0.0-beta4-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/shindig-extras-3.0.0-beta4-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/shindig-features-3.0.0-beta4-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/shindig-gadgets-3.0.0-beta4-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/shindig-social-api-3.0.0-beta4-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/shiro-core-1.1.0.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/shiro-web-1.1.0.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/slf4j-api-1.7.2-redhat-1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/xml-apis-1.3.04.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/xml-resolver-1.2-redhat-3.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/xmlpull-1.1.3.1.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/xpp3_min-1.1.4c-redhat-2.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/lib/xstream-1.4.3.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/picketlink.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/WEB-INF/web.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/container/Bridge.as
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/container/Bridge.fla
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/container/Bridge.swf
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/container/gadgets.css
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/container/rpctest_childgadget.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/container/rpctest_gadget.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/container/sample-payment.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/container/sample-pubsub-2-publisher.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/container/sample-pubsub-2-subscriber.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/container/sample-pubsub-publisher.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/container/sample-pubsub-subscriber.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/editor/CodeMirror-0.8/css/docs.css
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/editor/CodeMirror-0.8/css/xmlcolors.css
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/favicon.ico
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/gadgets/compliance/javascript-tests/1.1/activities/suite.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/gadgets/compliance/javascript-tests/1.1/appdata/suite.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/gadgets/compliance/javascript-tests/1.1/people/suite.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/gadgets/compliance/javascript-tests/1.1/suite.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/gadgets/compliance-1.0/ExpressionLangSample.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/gadgets/compliance-1.0/customTagTemplates.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/gadgets/compliance-1.0/helloViewerAndFriends.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/gadgets/compliance-1.0/helloWorld.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/gadgets/compliance-1.0/helloWorld_FriendsAndViews.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/gadgets/compliance-1.0/nestedCustomTagsWithFriends.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/gadgets/compliance-1.0/osVarTestGadget.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/gadgets/compliance-1.0/ownerRequestViewerRequest.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/gadgets/compliance-1.0/sampleAlbumAndContents.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/images/bg_blue.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/images/overlord_logo.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/images/savara_logo_hori.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/images/ui-bg_flat_0_aaaaaa_40x100.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/images/ui-bg_flat_55_fbec88_40x100.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/images/ui-bg_glass_75_d0e5f5_1x400.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/images/ui-bg_glass_85_dfeffc_1x400.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/images/ui-bg_glass_95_fef1ec_1x400.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/images/ui-bg_gloss-wave_55_5c9ccc_500x100.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/images/ui-bg_inset-hard_100_f5f8f9_1x100.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/images/ui-bg_inset-hard_100_fcfdfd_1x100.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/images/ui-icons_217bc0_256x240.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/images/ui-icons_2e83ff_256x240.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/images/ui-icons_469bdd_256x240.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/images/ui-icons_6da8d5_256x240.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/images/ui-icons_cd0a0a_256x240.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/images/ui-icons_d8e7f3_256x240.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/images/ui-icons_f9bd01_256x240.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/images/user.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/jquery-ui-1.8.18.custom.css
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/login.jsp
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/logout.jsp
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/ActivityStreams/ActivityStreamGadget.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/ActivityStreams/ActivityStreamTemplate.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/ContainerPublish.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/DynamicSizeDemo.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/FlashBridgeCajaExample.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/FlashCajaExample.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/SharedLockedDomainDemo1.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/SharedLockedDomainDemo2.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/SharedScriptFrameDemo.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/SocialActivitiesWorld.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/SocialCajaWorld.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/SocialHelloWorld.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/bubble.gif
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/commoncontainer/gadgetCollections.json
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/commoncontainer/pubsub2.json
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/commoncontainer/sample-views.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/commoncontainer/viewsMenu.json
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/conservcontainer/portlet.css
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/conservcontainer/sample-actions-runner.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/conservcontainer/sample-actions-voip.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/conservcontainer/sample-selection-listener.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/embeddedexperiences/AlbumViewer.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/embeddedexperiences/PhotoList.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/getFriendsHasApp.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/icon.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/media/Media.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/media/styles.css
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/media-openGadgets/Media.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/media-openGadgets/styles.css
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/new.gif
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/nophoto.gif
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/oauth.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/oauth2/oauth2_facebook.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/oauth2/oauth2_google.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/oauth2/oauth2_windowslive.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/oauth2/shindig_authorization.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/oauth2/shindig_client_credentials.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/rewriter/feather.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/rewriter/rewriter1.css
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/rewriter/rewriter2.css
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/rewriter/rewriteroff.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/rewriter/rewriteron.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/shindigoauth.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/examples/templates/FlashTag.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/state-basicfriendlist.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/state-smallfriendlist.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/samplecontainer/state.dtd
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/sampledata/canonicaldb.json
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war/xpc.swf
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadget-web.war.dodeploy
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/WEB-INF/web.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/calltrace-gadget/README.txt
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/calltrace-gadget/calltrace.json
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/calltrace-gadget/gadget.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/calltrace-gadget/skin/green-circle.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/calltrace-gadget/skin/icons-rtl.gif
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/calltrace-gadget/skin/icons.gif
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/calltrace-gadget/skin/loading.gif
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/calltrace-gadget/skin/red-circle.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/calltrace-gadget/skin/task.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/calltrace-gadget/skin/ui.dynatree.css
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/calltrace-gadget/skin/vline-rtl.gif
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/calltrace-gadget/skin/vline.gif
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/calltrace-gadget/skin/warning.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/calltrace-gadget/tabs.css
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/calltrace-gadget/thumbnail.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/rt-gadget/README.txt
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/rt-gadget/d3.css
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/rt-gadget/gadget.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/rt-gadget/sampledata.json
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/rt-gadget/thumbnail.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/situation-gadget/README.txt
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/situation-gadget/arrows.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/situation-gadget/gadget.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/situation-gadget/thumbnail.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/so-gadget/README.txt
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/so-gadget/gadget.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/so-gadget/gen.svg
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war/so-gadget/thumbnail.png
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/gadgets.war.dodeploy
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov-acs.war/WEB-INF/classes/AggregateServiceResponseTime.mvel
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov-acs.war/WEB-INF/classes/MaintainServiceDefinitions.mvel
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov-acs.war/WEB-INF/classes/SituationDescription.mvel
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov-acs.war/WEB-INF/classes/SituationType.mvel
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov-acs.war/WEB-INF/classes/TidyServiceDefinitions.mvel
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov-acs.war/WEB-INF/classes/acs.json
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov-acs.war/WEB-INF/lib/acs-loader-jee-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov-acs.war.dodeploy
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov-epn.war/WEB-INF/classes/epn.json
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov-epn.war/WEB-INF/classes/org/overlord/rtgov/content/epn/SOAActivityTypeEventSplitter.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov-epn.war/WEB-INF/classes/org/overlord/rtgov/content/epn/ServiceDefinitionProcessor.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov-epn.war/WEB-INF/classes/org/overlord/rtgov/content/epn/ServiceResponseTimeProcessor.class
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov-epn.war/WEB-INF/lib/epn-loader-jee-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov-epn.war.dodeploy
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/beans.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/classes/SeverityAnalyzer.mvel
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/jboss-web.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/active-collection-infinispan-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/active-collection-jee-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/active-collection-rests-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/activity-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/activity-client-jee-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/activity-server-epn-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/activity-server-jee-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/activity-server-rests-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/activity-store-jpa-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/call-trace-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/call-trace-rests-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/collector-activity-server-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/ep-jpa-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/epn-container-jee-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/overlord-commons-auth-1.1.0-redhat-7.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/overlord-commons-config-1.1.0-redhat-7.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/reports-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/reports-jee-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/reports-rests-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/rtgov-client-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/rtgov-infinispan-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/rtgov-jbossas-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/rtgov-switchyard-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/service-dependency-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/service-dependency-rests-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/service-dependency-svg-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/situation-manager-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/lib/situation-manager-rests-1.0.1.Final-redhat-4.jar
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war/WEB-INF/web.xml
+	rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/overlord-rtgov/overlord-rtgov.war.dodeploy
+fi
+
+echo "Removing files from removed-list-sramp"
+# removed-list-sramp
+rm -rf $FSW_HOME/jboss-eap-6.1/bin/s-ramp-shell-0.3.1.Final-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/bin/s-ramp.bat
+rm -rf $FSW_HOME/jboss-eap-6.1/bin/s-ramp.sh
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/javax/jcr/main/jcr-2.0.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/javax/jcr/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/lucene/3.6.2-redhat-4/jakarta-regexp-1.4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/lucene/3.6.2-redhat-4/lucene-analyzers-3.6.2-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/lucene/3.6.2-redhat-4/lucene-core-3.6.2-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/lucene/3.6.2-redhat-4/lucene-facet-3.6.2-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/lucene/3.6.2-redhat-4/lucene-grouping-3.6.2-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/lucene/3.6.2-redhat-4/lucene-highlighter-3.6.2-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/lucene/3.6.2-redhat-4/lucene-kuromoji-3.6.2-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/lucene/3.6.2-redhat-4/lucene-memory-3.6.2-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/lucene/3.6.2-redhat-4/lucene-misc-3.6.2-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/lucene/3.6.2-redhat-4/lucene-phonetic-3.6.2-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/lucene/3.6.2-redhat-4/lucene-regex-3.0.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/lucene/3.6.2-redhat-4/lucene-smartcn-3.6.2-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/lucene/3.6.2-redhat-4/lucene-spatial-3.6.2-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/lucene/3.6.2-redhat-4/lucene-spellchecker-3.6.2-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/lucene/3.6.2-redhat-4/lucene-stempel-3.6.2-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/lucene/3.6.2-redhat-4/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/solr/3.6.2-redhat-4/commons-codec-1.4-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/solr/3.6.2-redhat-4/commons-io-2.1-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/solr/3.6.2-redhat-4/commons-lang-2.6-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/solr/3.6.2-redhat-4/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/solr/3.6.2-redhat-4/solr-analysis-extras-3.6.2-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/solr/3.6.2-redhat-4/solr-core-3.6.2-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/solr/3.6.2-redhat-4/solr-solrj-3.6.2-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/tika/1.3/apache-mime4j-core-0.7.2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/tika/1.3/apache-mime4j-dom-0.7.2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/tika/1.3/asm-3.3.1-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/tika/1.3/commons-codec-1.4-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/tika/1.3/commons-compress-1.4.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/tika/1.3/commons-logging-1.1.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/tika/1.3/fontbox-1.7.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/tika/1.3/geronimo-stax-api_1.0_spec-1.0.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/tika/1.3/isoparser-1.0-RC-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/tika/1.3/jempbox-1.7.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/tika/1.3/juniversalchardet-1.0.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/tika/1.3/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/tika/1.3/pdfbox-1.7.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/tika/1.3/tagsoup-1.2.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/tika/1.3/tika-core-1.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/tika/1.3/tika-parsers-1.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/tika/1.3/vorbis-java-core-0.1-tests.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/tika/1.3/vorbis-java-core-0.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/tika/1.3/vorbis-java-tika-0.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/apache/tika/1.3/xz-1.0.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/hibernate/search/engine/main/avro-1.6.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/hibernate/search/engine/main/hibernate-search-analyzers-4.3.0.Final-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/hibernate/search/engine/main/hibernate-search-engine-4.3.0.Final-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/hibernate/search/engine/main/hibernate-search-infinispan-4.3.0.Final-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/hibernate/search/engine/main/infinispan-core-5.2.7.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/hibernate/search/engine/main/infinispan-lucene-directory-5.2.7.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/hibernate/search/engine/main/jackson-core-asl-1.9.2-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/hibernate/search/engine/main/jackson-mapper-asl-1.9.2-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/hibernate/search/engine/main/jboss-marshalling-1.3.18.GA-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/hibernate/search/engine/main/jboss-marshalling-river-1.3.18.GA-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/hibernate/search/engine/main/jboss-transaction-api_1.1_spec-1.0.1.Final-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/hibernate/search/engine/main/jgroups-3.2.7.Final-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/hibernate/search/engine/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/hibernate/search/engine/main/paranamer-2.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/hibernate/search/engine/main/staxmapper-1.1.0.Final-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/hibernate/search/orm/main/hibernate-search-orm-4.3.0.Final-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/hibernate/search/orm/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/infinispan/lucene-directory/5.2.7.Final-redhat-4/infinispan-lucene-directory-5.2.7.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/infinispan/lucene-directory/5.2.7.Final-redhat-4/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/jboss/as/product/sramp/dir.index
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/jboss/as/product/sramp/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/jboss/hibernate/custom-dialect-resolvers/hibernate-dialect-resolvers/main/hibernate-dialect-resolvers-1.0-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/jboss/hibernate/custom-dialect-resolvers/hibernate-dialect-resolvers/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/common/main/modeshape-common-3.3.6.GA-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/common/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/connector/git/main/jsch-0.1.48-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/connector/git/main/modeshape-connector-git-3.3.6.GA-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/connector/git/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/connector/git/main/org.eclipse.jgit-2.1.0.201209190230-r.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/extractor/tika/main/modeshape-extractor-tika-3.3.6.GA-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/extractor/tika/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/jcr/api/main/modeshape-jcr-api-3.3.6.GA-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/jcr/api/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/jdbc/main/modeshape-jdbc-local-3.3.6.GA-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/jdbc/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/main/deployments/modeshape-cmis.war
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/main/deployments/modeshape-rest.war
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/main/deployments/modeshape-webdav.war
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/main/modeshape-jbossas-subsystem-3.3.6.GA-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/main/modeshape-jcr-3.3.6.GA-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/main/modeshape-schematic-3.3.6.GA-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/main/res/initial-content-default.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/ddl/main/modeshape-sequencer-ddl-3.3.6.GA-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/ddl/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/image/main/modeshape-sequencer-images-3.3.6.GA-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/image/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/java/main/common-3.3.0-v20070426.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/java/main/contenttype-3.2.100-v20070319.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/java/main/core-3.3.0-v_771.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/java/main/expressions-3.3.0-v20070606-0010.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/java/main/javassist-3.15.0-GA-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/java/main/jobs-3.3.0-v20070423.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/java/main/modeshape-sequencer-java-3.3.6.GA-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/java/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/java/main/osgi-3.3.0-v20070530.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/java/main/preferences-3.2.100-v20070522.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/java/main/registry-3.3.0-v20070522.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/java/main/resources-3.3.0-v20070604.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/java/main/runtime-3.3.100-v20070530.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/mp3/main/jaudiotagger-2.0.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/mp3/main/modeshape-sequencer-mp3-3.3.6.GA-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/mp3/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/sramp/main/modeshape-sequencer-sramp-3.3.6.GA-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/sramp/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/teiid/main/jcommander-1.18-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/teiid/main/modeshape-sequencer-teiid-3.3.6.GA-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/teiid/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/text/main/modeshape-sequencer-text-3.3.6.GA-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/text/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/wsdl/main/modeshape-sequencer-wsdl-3.3.6.GA-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/wsdl/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/wsdl/main/wsdl4j-1.6.2-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/xml/main/modeshape-sequencer-xml-3.3.6.GA-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/xml/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/xsd/main/common-2.4.0.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/xsd/main/ecore-2.4.2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/xsd/main/ecore-change-2.2.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/xsd/main/ecore-xmi-2.4.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/xsd/main/modeshape-sequencer-xsd-3.3.6.GA-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/xsd/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/xsd/main/xsd-2.2.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/zip/main/modeshape-sequencer-zip-3.3.6.GA-redhat-5.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/modeshape/sequencer/zip/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/overlord/commons/overlord-commons-auth/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/sramp/org/overlord/commons/overlord-commons-auth/main/overlord-commons-auth-1.1.0-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-archive-package/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-archive-package/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-archive-package/src/main/java/org/overlord/sramp/demos/archivepkg/ArchivePackageDemo.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-archive-package/src/main/resources/org/overlord/sramp/demos/archivepkg/wss-wssecurity-secext-1.0.xsd
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-archive-package/src/main/resources/org/overlord/sramp/demos/archivepkg/wss-wssecurity-utility-1.0.xsd
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-archive-package/src/main/resources/org/overlord/sramp/demos/archivepkg/wstx-wsba-1.1-schema-200701.xsd
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-archive-package/src/main/resources/org/overlord/sramp/demos/archivepkg/wstx-wsba-1.1-wsdl-200702.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-classifications/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-classifications/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-classifications/src/main/java/org/overlord/sramp/demos/classifications/ClassificationDemo.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-classifications/src/main/resources/org/overlord/sramp/demos/classifications/classifications-demo-doc-1.txt
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-classifications/src/main/resources/org/overlord/sramp/demos/classifications/classifications-demo-doc-2.txt
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-classifications/src/main/resources/org/overlord/sramp/demos/classifications/regions.owl.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-custom-deriver/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-custom-deriver/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-custom-deriver/src/main/java/org/overlord/sramp/demos/deriver/CustomDeriverDemo.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-custom-deriver/src/main/java/org/overlord/sramp/demos/deriver/WebXmlArtifactCollection.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-custom-deriver/src/main/java/org/overlord/sramp/demos/deriver/WebXmlDeriver.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-custom-deriver/src/main/java/org/overlord/sramp/demos/deriver/WebXmlDeriverProvider.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-custom-deriver/src/main/resources/org/overlord/sramp/demos/deriver/web.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-derived-artifacts/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-derived-artifacts/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-derived-artifacts/src/main/java/org/overlord/sramp/demos/derived/DerivedArtifactsDemo.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-derived-artifacts/src/main/resources/org/overlord/sramp/demos/derived/sample.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-mvn-integration/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-mvn-integration/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-mvn-integration/s-ramp-demos-mvn-integration-app/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-mvn-integration/s-ramp-demos-mvn-integration-app/src/main/java/org/overlord/sramp/demos/mvnintegration/app/SrampMavenIntegrationDemo.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-mvn-integration/s-ramp-demos-mvn-integration-app/src/test/java/org/overlord/sramp/demos/mvnintegration/app/SrampMavenIntegrationDemoTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-mvn-integration/s-ramp-demos-mvn-integration-artifacts/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-mvn-integration/s-ramp-demos-mvn-integration-artifacts/src/main/resources/schemas/address.xsd
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-mvn-integration/s-ramp-demos-mvn-integration-artifacts/src/main/resources/schemas/person.xsd
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-mvn-integration/s-ramp-demos-mvn-integration-artifacts/src/test/java/org/overlord/sramp/demos/mvnintegration/PersonTypeTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-ontologies/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-ontologies/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-ontologies/src/main/java/org/overlord/sramp/demos/ontologies/OntologyDemo.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-ontologies/src/main/resources/org/overlord/sramp/demos/ontologies/sample-ontology-1.owl.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-ontologies/src/main/resources/org/overlord/sramp/demos/ontologies/sample-ontology-2.owl.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-properties/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-properties/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-properties/src/main/java/org/overlord/sramp/demos/properties/PropertyDemo.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-properties/src/main/resources/org/overlord/sramp/demos/properties/property-demo-doc-1.txt
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-properties/src/main/resources/org/overlord/sramp/demos/properties/property-demo-doc-2.txt
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-query/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-query/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-query/src/main/java/org/overlord/sramp/demos/query/QueryDemo.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-query/src/main/resources/org/overlord/sramp/demos/query/archive-package.sramp
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-relationships/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-relationships/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-relationships/src/main/java/org/overlord/sramp/demos/relationships/RelationshipDemo.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-relationships/src/main/resources/org/overlord/sramp/demos/relationships/relationship-demo-doc-1.txt
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-relationships/src/main/resources/org/overlord/sramp/demos/relationships/relationship-demo-doc-2.txt
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-relationships/src/main/resources/org/overlord/sramp/demos/relationships/relationship-demo-doc-3.txt
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-shell-command/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-shell-command/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-shell-command/src/main/java/org/overlord/sramp/demos/shell/commands/JvmCommandProvider.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-shell-command/src/main/java/org/overlord/sramp/demos/shell/commands/JvmStatusCommand.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-simple-client/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-simple-client/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-simple-client/src/main/java/org/overlord/sramp/demos/simpleclient/SimpleClientDemo.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-simple-client/src/main/resources/org/overlord/sramp/demos/simpleclient/ws-humantask-context.xsd
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-simple-client/src/main/resources/org/overlord/sramp/demos/simpleclient/ws-humantask-leantask-api.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-simple-client/src/main/resources/org/overlord/sramp/demos/simpleclient/ws-humantask-policy.xsd
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-simple-client/src/main/resources/org/overlord/sramp/demos/simpleclient/ws-humantask-protocol.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-simple-client/src/main/resources/org/overlord/sramp/demos/simpleclient/ws-humantask-types.xsd
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-simple-client/src/main/resources/org/overlord/sramp/demos/simpleclient/ws-humantask.xsd
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard/src/main/java/org/overlord/sramp/demos/switchyard/service/InventoryService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard/src/main/java/org/overlord/sramp/demos/switchyard/service/InventoryServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard/src/main/java/org/overlord/sramp/demos/switchyard/service/Item.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard/src/main/java/org/overlord/sramp/demos/switchyard/service/ItemNotFoundException.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard/src/main/java/org/overlord/sramp/demos/switchyard/service/Order.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard/src/main/java/org/overlord/sramp/demos/switchyard/service/OrderAck.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard/src/main/java/org/overlord/sramp/demos/switchyard/service/OrderService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard/src/main/java/org/overlord/sramp/demos/switchyard/service/OrderServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard/src/main/java/org/overlord/sramp/demos/switchyard/service/Transformers.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard/src/main/resources/wsdl/OrderService.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/artifacts/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/artifacts/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/artifacts/src/main/java/org/switchyard/quickstarts/demo/multiapp/InventoryService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/artifacts/src/main/java/org/switchyard/quickstarts/demo/multiapp/Item.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/artifacts/src/main/java/org/switchyard/quickstarts/demo/multiapp/ItemNotFoundException.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/artifacts/src/main/java/org/switchyard/quickstarts/demo/multiapp/Order.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/artifacts/src/main/java/org/switchyard/quickstarts/demo/multiapp/OrderAck.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/artifacts/src/main/java/org/switchyard/quickstarts/demo/multiapp/OrderService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/artifacts/src/main/resources/OrderService.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/artifacts/src/main/resources/orderTypes.xsd
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/order-consumer/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/order-consumer/order-consumer.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/order-consumer/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/order-service/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/order-service/order-service.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/order-service/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/order-service/src/main/java/org/switchyard/quickstarts/demo/multiapp/service/InventoryServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/order-service/src/main/java/org/switchyard/quickstarts/demo/multiapp/service/OrderServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/order-service/src/main/java/org/switchyard/quickstarts/demo/multiapp/service/Transformers.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/web/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/web/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/web/src/main/java/org/switchyard/quickstarts/demo/multiapp/web/ItemEntry.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/web/src/main/webapp/WEB-INF/beans.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/web/src/main/webapp/WEB-INF/faces-config.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/web/src/main/webapp/home.xhtml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/overlord/sramp/s-ramp-demos-switchyard-multiapp/web/src/main/webapp/index.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-server.war/WEB-INF/lib/aether-api-1.13.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-server.war/WEB-INF/lib/aether-impl-1.13.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-server.war/WEB-INF/lib/aether-spi-1.13.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-server.war/WEB-INF/lib/s-ramp-common-0.3.1.Final-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/WEB-INF/classes/classlist.mf
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/WEB-INF/lib/aether-api-1.13.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/WEB-INF/lib/aether-impl-1.13.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/WEB-INF/lib/aether-spi-1.13.1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/WEB-INF/lib/aopalliance-1.0.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/WEB-INF/lib/commons-fileupload-1.2.2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/WEB-INF/lib/errai-bus-2.4.1.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/WEB-INF/lib/errai-cdi-client-2.4.1.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/WEB-INF/lib/errai-marshalling-2.4.1.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/WEB-INF/lib/errai-ui-2.4.1.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/WEB-INF/lib/errai-weld-integration-2.4.1.Final-redhat-4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/WEB-INF/lib/s-ramp-common-0.3.1.Final-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/app/2F7A5A992174F5D063211D630C01FE4B.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/app/557DCC6F4DFA7345715B84428312139C.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/app/6A9A634F69F589A593F8CB2C1D3D5FF1.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/app/792F9D6FB653DF9B25F958253AB0FCDA.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/app/9A6835A8C0927760B6CE3783DAB2C213.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/app/ABA07E04092B00F416E3E6E35BF4A12A.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/app/app.nocache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/app/clear.cache.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/app/hosted.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/app/junit-standards.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/s-ramp-ui.war/app/junit.html
+
+echo "Removing files from removed-list-switchyard"
+# removed-list-switchyard
+rm -rf $FSW_HOME/jboss-eap-6.1/docs/schema/soa/org/apache/camel/schema/spring/camel-spring.xsd
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/com/thoughtworks/xstream/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/com/thoughtworks/xstream/main/xstream-1.4.3.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/cdi/main/camel-cdi-2.10.0.redhat-60024.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/cdi/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/core/main/camel-core-2.10.0.redhat-60024.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/core/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/cxf/main/camel-cxf-2.10.0.redhat-60024.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/cxf/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/ftp/main/camel-ftp-2.10.0.redhat-60024.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/ftp/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/jaxb/main/camel-jaxb-2.10.0.redhat-60024.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/jaxb/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/jms/main/camel-jms-2.10.0.redhat-60024.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/jms/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/jpa/main/camel-jpa-2.10.0.redhat-60024.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/jpa/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/mail/main/camel-mail-2.10.0.redhat-60024.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/mail/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/mvel/main/camel-mvel-2.10.0.redhat-60024.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/mvel/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/netty/main/camel-netty-2.10.0.redhat-60024.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/netty/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/ognl/main/camel-ognl-2.10.0.redhat-60024.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/ognl/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/quartz/main/camel-quartz-2.10.0.redhat-60024.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/quartz/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/script/main/camel-script-2.10.0.redhat-60024.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/script/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/soap/main/camel-soap-2.10.0.redhat-60024.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/soap/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/spring/main/camel-spring-2.10.0.redhat-60024.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/spring/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/sql/main/camel-sql-2.10.0.redhat-60024.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/camel/sql/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/poi/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/poi/main/poi-3.9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/poi/main/poi-ooxml-3.9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/poi/main/poi-ooxml-schemas-3.9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/xmlgraphics/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/apache/xmlgraphics/main/xml-apis-1.3.04.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/drools/main/drools-compiler-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/drools/main/drools-core-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/drools/main/drools-decisiontables-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/drools/main/drools-persistence-jpa-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/drools/main/drools-templates-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/drools/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jboss/as/console/eap/hal-console-1.5.7.Final-redhat-5-resources.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-audit-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-bpmn2-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-flow-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-flow-builder-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-human-task-core-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-human-task-workitems-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-kie-services-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-meta-inf-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-persistence-jpa-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-runtime-manager-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-shared-services-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/jbpm-workitems-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/jbpm/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/kie/main/kie-api-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/kie/main/kie-internal-6.0.0-redhat-9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/kie/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/springframework/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/springframework/main/spring-beans-3.0.7.RELEASE.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/springframework/main/spring-context-3.0.7.RELEASE.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/springframework/main/spring-core-3.0.7.RELEASE.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/springframework/main/spring-jdbc-3.0.7.RELEASE.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/springframework/main/spring-jms-3.0.7.RELEASE.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/springframework/main/spring-orm-3.0.7.RELEASE.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/springframework/main/spring-tx-3.0.7.RELEASE.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/api/extensions/wsdl/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/api/extensions/wsdl/main/switchyard-extensions-wsdl-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/api/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/api/main/switchyard-api-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/bus/camel/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/bus/camel/main/switchyard-bus-camel-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/common/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/common/main/switchyard-common-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bean/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bean/main/switchyard-component-bean-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/activity-monitor-model-1.2.1.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/engine-3.0.0.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/gwt-console-rpc-2.4.5.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/gwt-console-server-integration-2.4.5.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/riftsaw-agents-3.0.0.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/riftsaw-bpaf-3.0.0.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/riftsaw-bpel-api-3.0.0.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/riftsaw-bpel-compiler-3.0.0.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/riftsaw-bpel-dao-3.0.0.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/riftsaw-bpel-epr-3.0.0.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/riftsaw-bpel-obj-3.0.0.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/riftsaw-bpel-ql-3.0.0.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/riftsaw-bpel-runtime-3.0.0.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/riftsaw-bpel-schemas-3.0.0.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/riftsaw-bpel-store-3.0.0.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/riftsaw-bpel2svg-3.0.0.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/riftsaw-console-integration-3.0.0.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/riftsaw-dao-jpa-3.0.0.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/riftsaw-dao-jpa-hibernate-3.0.0.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/riftsaw-jacob-3.0.0.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/riftsaw-scheduler-simple-3.0.0.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/riftsaw-utils-3.0.0.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/switchyard-component-bpel-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpel/main/xmlbeans-2.4.0-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpm/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/bpm/main/switchyard-component-bpm-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/camel/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/camel/main/switchyard-component-camel-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/camel/switchyard/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/camel/switchyard/main/switchyard-component-camel-switchyard-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/common/camel/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/common/camel/main/switchyard-component-common-camel-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/common/knowledge/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/common/knowledge/main/switchyard-component-common-knowledge-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/common/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/common/main/switchyard-component-common-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/http/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/http/main/switchyard-component-http-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/jca/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/jca/main/switchyard-component-jca-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/resteasy/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/resteasy/main/switchyard-component-resteasy-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/rules/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/rules/main/switchyard-component-rules-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/sca/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/sca/main/switchyard-component-sca-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/soap/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/component/soap/main/switchyard-component-soap-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/config/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/config/main/switchyard-config-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/deploy/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/deploy/main/switchyard-deploy-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/main/switchyard-deploy-jboss-as7-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/runtime/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/runtime/main/switchyard-runtime-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/security/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/security/main/switchyard-security-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/security/main/switchyard-security-jboss-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/serial/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/serial/main/switchyard-serial-jackson-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/transform/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/transform/main/switchyard-transform-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/validate/main/module.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/validate/main/switchyard-validate-1.1.1-p5-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/camel/camel-example-cxf-tomcat/README.txt
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/camel/camel-example-cxf-tomcat/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/camel/camel-example-cxf-tomcat/src/main/java/org/apache/camel/example/cxf/CamelRoute.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/camel/camel-example-cxf-tomcat/src/main/java/org/apache/camel/example/cxf/CamelRouteClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/camel/camel-example-cxf-tomcat/src/main/java/org/apache/camel/example/cxf/incident/IncidentService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/camel/camel-example-cxf-tomcat/src/main/java/org/apache/camel/example/cxf/incident/InputReportIncident.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/camel/camel-example-cxf-tomcat/src/main/java/org/apache/camel/example/cxf/incident/InputStatusIncident.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/camel/camel-example-cxf-tomcat/src/main/java/org/apache/camel/example/cxf/incident/OutputReportIncident.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/camel/camel-example-cxf-tomcat/src/main/java/org/apache/camel/example/cxf/incident/OutputStatusIncident.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/camel/camel-example-cxf-tomcat/src/main/resources/camel-config.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/camel/camel-example-cxf-tomcat/src/main/resources/log4j.properties
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/camel/camel-example-cxf-tomcat/src/main/webapp/WEB-INF/web.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/camel/camel-example-servlet-tomcat/README.txt
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/camel/camel-example-servlet-tomcat/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/camel/camel-example-servlet-tomcat/src/main/resources/camel-config.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/camel/camel-example-servlet-tomcat/src/main/resources/log4j.properties
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/camel/camel-example-servlet-tomcat/src/main/webapp/WEB-INF/web.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/camel/camel-example-servlet-tomcat/src/main/webapp/index.html
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/bean-service.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/main/java/org/switchyard/quickstarts/bean/service/InventoryService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/main/java/org/switchyard/quickstarts/bean/service/InventoryServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/main/java/org/switchyard/quickstarts/bean/service/Item.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/main/java/org/switchyard/quickstarts/bean/service/ItemNotFoundException.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/main/java/org/switchyard/quickstarts/bean/service/Order.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/main/java/org/switchyard/quickstarts/bean/service/OrderAck.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/main/java/org/switchyard/quickstarts/bean/service/OrderInterceptor.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/main/java/org/switchyard/quickstarts/bean/service/OrderService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/main/java/org/switchyard/quickstarts/bean/service/OrderServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/main/java/org/switchyard/quickstarts/bean/service/Transformers.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/main/java/org/switchyard/quickstarts/bean/service/Validators.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/main/resources/wsdl/OrderService.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/test/java/org/switchyard/quickstarts/bean/service/BeanClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/test/java/org/switchyard/quickstarts/bean/service/InventoryServiceTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/test/java/org/switchyard/quickstarts/bean/service/OrderServiceTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/test/java/org/switchyard/quickstarts/bean/service/TypeTransformationTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/test/java/org/switchyard/quickstarts/bean/service/WebServiceTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/test/resources/xml/order.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/test/resources/xml/orderAck.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/test/resources/xml/soap-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bean-service/src/test/resources/xml/soap-response.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/jms_binding/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/jms_binding/bpel-jms-binding.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/jms_binding/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/jms_binding/src/main/resources/SayHello.bpel
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/jms_binding/src/main/resources/SayHelloArtifacts.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/jms_binding/src/main/resources/deploy.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/jms_binding/src/test/java/org/switchyard/quickstarts/bpel/service/hello/HornetQClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/jms_binding/src/test/java/org/switchyard/quickstarts/bpel/service/hello/JmsBindingTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/jms_binding/src/test/java/org/switchyard/quickstarts/bpel/service/hello/SayHelloTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/jms_binding/src/test/resources/bpel.properties
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/jms_binding/src/test/resources/hornetq-configuration.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/jms_binding/src/test/resources/hornetq-jms.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/jms_binding/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/jms_binding/src/test/resources/switchyard-quickstart-bpel-jms-hornetq-jms.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/jms_binding/src/test/resources/xml/xml-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/jms_binding/src/test/resources/xml/xml-response.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/bpel-loan-approval.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/src/main/resources/deploy.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/src/main/resources/loanServicePT.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/src/main/resources/loan_approval.bpel
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/src/main/resources/riskAssessmentPT.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/src/main/resources/risk_assessment.bpel
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/src/test/java/org/switchyard/quickstarts/bpel/service/BPELLoanClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/src/test/java/org/switchyard/quickstarts/bpel/service/LoanApprovalTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/src/test/java/org/switchyard/quickstarts/bpel/service/RiskAssessmentTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/src/test/java/org/switchyard/quickstarts/bpel/service/WebServiceTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/src/test/resources/bpel.properties
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/src/test/resources/xml/soap-loanreq1.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/src/test/resources/xml/soap-loanreq2.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/src/test/resources/xml/soap-loanresp1.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/src/test/resources/xml/soap-loanresp2.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/src/test/resources/xml/xml-loanreq1.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/src/test/resources/xml/xml-loanreq2.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/src/test/resources/xml/xml-loanresp1.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/src/test/resources/xml/xml-riskreq1.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/src/test/resources/xml/xml-riskreq2.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/loan_approval/src/test/resources/xml/xml-riskresp1.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/say_hello/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/say_hello/bpel-say-hello.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/say_hello/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/say_hello/src/main/resources/SayHello.bpel
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/say_hello/src/main/resources/SayHelloArtifacts.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/say_hello/src/main/resources/deploy.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/say_hello/src/test/java/org/switchyard/quickstarts/bpel/service/BPELHelloClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/say_hello/src/test/java/org/switchyard/quickstarts/bpel/service/SayHelloTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/say_hello/src/test/java/org/switchyard/quickstarts/bpel/service/WebServiceTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/say_hello/src/test/resources/bpel.properties
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/say_hello/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/say_hello/src/test/resources/xml/soap-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/say_hello/src/test/resources/xml/soap-response.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/say_hello/src/test/resources/xml/xml-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/say_hello/src/test/resources/xml/xml-response.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/simple_correlation/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/simple_correlation/bpel-correlation.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/simple_correlation/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/simple_correlation/src/main/resources/HelloGoodbye.bpel
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/simple_correlation/src/main/resources/HelloGoodbye.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/simple_correlation/src/main/resources/deploy.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/simple_correlation/src/test/java/org/switchyard/quickstarts/bpel/service/BPELCorrelationClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/simple_correlation/src/test/java/org/switchyard/quickstarts/bpel/service/HelloGoodbyeTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/simple_correlation/src/test/java/org/switchyard/quickstarts/bpel/service/WebServiceTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/simple_correlation/src/test/resources/bpel.properties
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/simple_correlation/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/simple_correlation/src/test/resources/xml/goodbye_request1.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/simple_correlation/src/test/resources/xml/goodbye_response1.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/simple_correlation/src/test/resources/xml/hello_request1.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/simple_correlation/src/test/resources/xml/hello_response1.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/simple_correlation/src/test/resources/xml/xml-goodbye_request1.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/simple_correlation/src/test/resources/xml/xml-goodbye_response1.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/simple_correlation/src/test/resources/xml/xml-hello_request1.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpel-service/simple_correlation/src/test/resources/xml/xml-hello_response1.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/bpm-service.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/main/java/org/switchyard/quickstarts/bpm/service/BackOrder.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/main/java/org/switchyard/quickstarts/bpm/service/BackOrderBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/main/java/org/switchyard/quickstarts/bpm/service/Inventory.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/main/java/org/switchyard/quickstarts/bpm/service/InventoryBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/main/java/org/switchyard/quickstarts/bpm/service/ProcessOrder.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/main/java/org/switchyard/quickstarts/bpm/service/Shipping.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/main/java/org/switchyard/quickstarts/bpm/service/ShippingBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/main/java/org/switchyard/quickstarts/bpm/service/data/ObjectFactory.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/main/java/org/switchyard/quickstarts/bpm/service/data/Order.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/main/java/org/switchyard/quickstarts/bpm/service/data/OrderAck.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/main/java/org/switchyard/quickstarts/bpm/service/data/package-info.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/main/resources/ProcessOrder.bpmn
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/main/resources/wsdl/ProcessOrder.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/test/java/org/switchyard/quickstarts/bpm/service/BPMClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/test/java/org/switchyard/quickstarts/bpm/service/BackOrderTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/test/java/org/switchyard/quickstarts/bpm/service/InventoryTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/test/java/org/switchyard/quickstarts/bpm/service/ProcessOrderTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/test/java/org/switchyard/quickstarts/bpm/service/ShippingTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/test/java/org/switchyard/quickstarts/bpm/service/WebServiceTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/test/resources/xml/soap-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/bpm-service/src/test/resources/xml/soap-response.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-binding/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-binding/camel-binding.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-binding/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-binding/src/main/java/org/switchyard/quickstarts/camel/binding/GreetingService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-binding/src/main/java/org/switchyard/quickstarts/camel/binding/GreetingServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-binding/src/test/java/org/switchyard/quickstarts/camel/binding/CamelBindingTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-binding/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-binding/src/test/resources/test.txt
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-ftp-binding/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-ftp-binding/camel-ftp-binding.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-ftp-binding/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-ftp-binding/src/main/java/org/switchyard/quickstarts/camel/ftp/binding/GreetingService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-ftp-binding/src/main/java/org/switchyard/quickstarts/camel/ftp/binding/GreetingServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-ftp-binding/src/test/java/org/switchyard/quickstarts/camel/ftp/binding/CamelFtpBindingTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-ftp-binding/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-ftp-binding/src/test/resources/users.properties
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jaxb/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jaxb/camel-jaxb.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jaxb/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jaxb/src/main/java/org/switchyard/quickstarts/camel/jaxb/GreetingRequest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jaxb/src/main/java/org/switchyard/quickstarts/camel/jaxb/GreetingResponse.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jaxb/src/main/java/org/switchyard/quickstarts/camel/jaxb/GreetingService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jaxb/src/main/java/org/switchyard/quickstarts/camel/jaxb/GreetingServiceRoute.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jaxb/src/main/java/org/switchyard/quickstarts/camel/jaxb/ObjectFactory.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jaxb/src/main/java/org/switchyard/quickstarts/camel/jaxb/package-info.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jaxb/src/test/java/org/switchyard/quickstarts/camel/jaxb/JAXBCamelTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jaxb/src/test/java/org/switchyard/quickstarts/camel/jaxb/JAXBClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jaxb/src/test/java/org/switchyard/quickstarts/camel/jaxb/JAXBUtil.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jaxb/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jms-binding/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jms-binding/camel-jms-binding.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jms-binding/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jms-binding/src/main/java/org/switchyard/quickstarts/camel/jms/binding/GreetingService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jms-binding/src/main/java/org/switchyard/quickstarts/camel/jms/binding/GreetingServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jms-binding/src/test/java/org/switchyard/quickstarts/camel/jms/binding/CamelJMSBindingTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jms-binding/src/test/java/org/switchyard/quickstarts/camel/jms/binding/HornetQClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jms-binding/src/test/resources/hornetq-configuration.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jms-binding/src/test/resources/hornetq-jms.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jms-binding/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jms-binding/src/test/resources/switchyard-quickstart-camel-jms-binding-hornetq-jms.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jms-binding/src/test/resources/test.txt
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jpa-binding/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jpa-binding/camel-jpa-binding.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jpa-binding/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jpa-binding/src/main/java/org/switchyard/quickstarts/camel/jpa/binding/GreetingService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jpa-binding/src/main/java/org/switchyard/quickstarts/camel/jpa/binding/GreetingServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jpa-binding/src/main/java/org/switchyard/quickstarts/camel/jpa/binding/PeriodicService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jpa-binding/src/main/java/org/switchyard/quickstarts/camel/jpa/binding/PeriodicServiceImpl.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jpa-binding/src/main/java/org/switchyard/quickstarts/camel/jpa/binding/StoreService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jpa-binding/src/main/java/org/switchyard/quickstarts/camel/jpa/binding/domain/Greet.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jpa-binding/src/test/java/org/switchyard/quickstarts/camel/jpa/binding/CamelJpaBindingReceiveTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jpa-binding/src/test/java/org/switchyard/quickstarts/camel/jpa/binding/CamelJpaBindingStoreTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jpa-binding/src/test/java/org/switchyard/quickstarts/camel/jpa/binding/CamelJpaBindingTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-jpa-binding/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-mail-binding/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-mail-binding/camel-mail-binding.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-mail-binding/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-mail-binding/src/main/java/org/switchyard/quickstarts/camel/mail/binding/PrintService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-mail-binding/src/main/java/org/switchyard/quickstarts/camel/mail/binding/PrintServiceImpl.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-mail-binding/src/test/java/org/switchyard/quickstarts/camel/mail/CamelMailBindingTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-mail-binding/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-netty-binding/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-netty-binding/camel-netty-binding.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-netty-binding/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-netty-binding/roles.properties
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-netty-binding/src/main/java/org/switchyard/quickstarts/camel/netty/binding/DefaultGreetingServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-netty-binding/src/main/java/org/switchyard/quickstarts/camel/netty/binding/GreetingService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-netty-binding/src/main/java/org/switchyard/quickstarts/camel/netty/binding/GreetingServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-netty-binding/src/main/java/org/switchyard/quickstarts/camel/netty/binding/SecuredGreetingServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-netty-binding/src/main/java/org/switchyard/quickstarts/camel/netty/binding/SslConfigurationFactory.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-netty-binding/src/test/java/org/switchyard/quickstarts/camel/netty/binding/CamelNettyBindingTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-netty-binding/src/test/java/org/switchyard/quickstarts/camel/netty/binding/TCPClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-netty-binding/src/test/java/org/switchyard/quickstarts/camel/netty/binding/TCPUnsecuredClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-netty-binding/src/test/java/org/switchyard/quickstarts/camel/netty/binding/UDPClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-netty-binding/src/test/resources/jaas.conf
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-netty-binding/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-netty-binding/users.jks
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-quartz-binding/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-quartz-binding/camel-quartz-binding.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-quartz-binding/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-quartz-binding/src/main/java/org/switchyard/quickstarts/camel/quartz/binding/GreetingService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-quartz-binding/src/main/java/org/switchyard/quickstarts/camel/quartz/binding/GreetingServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-quartz-binding/src/test/java/org/switchyard/quickstarts/camel/quartz/binding/CamelQuartzBindingTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-quartz-binding/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-service/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-service/camel-service.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-service/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-service/src/main/java/org/switchyard/quickstarts/camel/service/JavaDSL.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-service/src/main/java/org/switchyard/quickstarts/camel/service/JavaDSLBuilder.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-service/src/test/java/org/switchyard/quickstarts/camel/service/CamelServiceTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-service/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-soap-proxy/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-soap-proxy/camel-soap-proxy.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-soap-proxy/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-soap-proxy/src/main/java/org/switchyard/quickstarts/camel/soap/proxy/ReverseService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-soap-proxy/src/main/webapp/WEB-INF/jboss-web.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-soap-proxy/src/main/webapp/WEB-INF/web.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-soap-proxy/src/test/java/org/switchyard/quickstarts/camel/soap/proxy/CamelClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-soap-proxy/src/test/java/org/switchyard/quickstarts/camel/soap/proxy/CamelSOAPProxyTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-soap-proxy/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-soap-proxy/src/test/resources/xml/soap-proxy-response.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-soap-proxy/src/test/resources/xml/soap-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-soap-proxy/src/test/resources/xml/soap-response.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-sql-binding/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-sql-binding/camel-sql-binding.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-sql-binding/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-sql-binding/schema.sql
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-sql-binding/src/main/java/org/switchyard/quickstarts/camel/sql/binding/Greeting.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-sql-binding/src/main/java/org/switchyard/quickstarts/camel/sql/binding/GreetingConverter.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-sql-binding/src/main/java/org/switchyard/quickstarts/camel/sql/binding/GreetingService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-sql-binding/src/main/java/org/switchyard/quickstarts/camel/sql/binding/GreetingServiceImpl.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-sql-binding/src/main/java/org/switchyard/quickstarts/camel/sql/binding/PojoIterator.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-sql-binding/src/main/java/org/switchyard/quickstarts/camel/sql/binding/SingleGreetService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-sql-binding/src/test/java/org/switchyard/quickstarts/camel/sql/CamelSqlBindingTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-sql-binding/src/test/java/org/switchyard/quickstarts/camel/sql/CamelSqlRetrieveTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-sql-binding/src/test/java/org/switchyard/quickstarts/camel/sql/CamelSqlStoreTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/camel-sql-binding/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/client/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/client/src/main/java/org/switchyard/quickstarts/demo/cluster/Application.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/client/src/main/java/org/switchyard/quickstarts/demo/cluster/Car.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/client/src/main/java/org/switchyard/quickstarts/demo/cluster/Deal.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/client/src/main/java/org/switchyard/quickstarts/demo/cluster/Offer.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/client/src/test/java/org/switchyard/quickstarts/demo/cluster/RemoteClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/credit/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/credit/src/main/java/org/switchyard/quickstarts/demo/cluster/Application.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/credit/src/main/java/org/switchyard/quickstarts/demo/cluster/Car.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/credit/src/main/java/org/switchyard/quickstarts/demo/cluster/CreditCheck.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/credit/src/main/java/org/switchyard/quickstarts/demo/cluster/Deal.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/credit/src/main/java/org/switchyard/quickstarts/demo/cluster/Offer.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/credit/src/main/resources/RulesComponent.drl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/credit/src/test/java/org/switchyard/quickstarts/demo/cluster/CreditCheckTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/dealer/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/dealer/src/main/java/org/switchyard/quickstarts/demo/cluster/Application.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/dealer/src/main/java/org/switchyard/quickstarts/demo/cluster/Car.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/dealer/src/main/java/org/switchyard/quickstarts/demo/cluster/CreditCheck.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/dealer/src/main/java/org/switchyard/quickstarts/demo/cluster/Deal.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/dealer/src/main/java/org/switchyard/quickstarts/demo/cluster/Dealer.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/dealer/src/main/java/org/switchyard/quickstarts/demo/cluster/DealerBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/dealer/src/main/java/org/switchyard/quickstarts/demo/cluster/Offer.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/dealer/src/test/java/org/switchyard/quickstarts/demo/cluster/DealerTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/cluster/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/artifacts/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/artifacts/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/artifacts/src/main/java/org/switchyard/quickstarts/demo/multiapp/InventoryService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/artifacts/src/main/java/org/switchyard/quickstarts/demo/multiapp/Item.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/artifacts/src/main/java/org/switchyard/quickstarts/demo/multiapp/ItemNotFoundException.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/artifacts/src/main/java/org/switchyard/quickstarts/demo/multiapp/Order.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/artifacts/src/main/java/org/switchyard/quickstarts/demo/multiapp/OrderAck.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/artifacts/src/main/java/org/switchyard/quickstarts/demo/multiapp/OrderService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/artifacts/src/main/resources/OrderService.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/artifacts/src/main/resources/orderTypes.xsd
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/order-consumer/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/order-consumer/order-consumer.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/order-consumer/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/order-consumer/src/test/java/org/switchyard/quickstarts/demo/multiapp/consumer/OrderIntakeClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/order-consumer/src/test/resources/order.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/order-consumer/src/test/resources/switchyard-quickstart-demo-multi-order-consumer-hornetq-jms.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/order-service/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/order-service/order-service.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/order-service/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/order-service/src/main/java/org/switchyard/quickstarts/demo/multiapp/service/InventoryServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/order-service/src/main/java/org/switchyard/quickstarts/demo/multiapp/service/OrderServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/order-service/src/main/java/org/switchyard/quickstarts/demo/multiapp/service/Transformers.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/order-service/src/test/java/org/switchyard/quickstarts/demo/multiapp/service/InventoryServiceTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/order-service/src/test/java/org/switchyard/quickstarts/demo/multiapp/service/OrderServiceTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/order-service/src/test/java/org/switchyard/quickstarts/demo/multiapp/service/TypeTransformationTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/order-service/src/test/java/org/switchyard/quickstarts/demo/multiapp/service/WebServiceTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/order-service/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/order-service/src/test/resources/xml/order.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/order-service/src/test/resources/xml/orderAck.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/order-service/src/test/resources/xml/soap-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/order-service/src/test/resources/xml/soap-response.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/web/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/web/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/web/src/main/java/org/switchyard/quickstarts/demo/multiapp/web/ItemEntry.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/web/src/main/webapp/WEB-INF/beans.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/web/src/main/webapp/WEB-INF/faces-config.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/web/src/main/webapp/home.xhtml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/web/src/main/webapp/index.html
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/web/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/web/src/test/resources/xml/order.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/web/src/test/resources/xml/orderAck.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/web/src/test/resources/xml/soap-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/multiApp/web/src/test/resources/xml/soap-response.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/orders.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/main/java/org/switchyard/quickstarts/demos/orders/InventoryService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/main/java/org/switchyard/quickstarts/demos/orders/InventoryServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/main/java/org/switchyard/quickstarts/demos/orders/Item.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/main/java/org/switchyard/quickstarts/demos/orders/ItemNotFoundException.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/main/java/org/switchyard/quickstarts/demos/orders/Order.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/main/java/org/switchyard/quickstarts/demos/orders/OrderAck.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/main/java/org/switchyard/quickstarts/demos/orders/OrderService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/main/java/org/switchyard/quickstarts/demos/orders/OrderServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/main/java/org/switchyard/quickstarts/demos/orders/Transformers.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/main/resources/wsdl/OrderService.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/main/webapp/WEB-INF/faces-config.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/main/webapp/css/default.css
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/main/webapp/home.xhtml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/main/webapp/img/sw.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/main/webapp/index.html
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/test/java/org/switchyard/quickstarts/demos/orders/InventoryServiceTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/test/java/org/switchyard/quickstarts/demos/orders/OrderServiceTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/test/java/org/switchyard/quickstarts/demos/orders/OrdersClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/test/java/org/switchyard/quickstarts/demos/orders/TypeTransformationTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/test/java/org/switchyard/quickstarts/demos/orders/WebServiceTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/test/resources/xml/order.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/test/resources/xml/orderAck.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/test/resources/xml/soap-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/orders/src/test/resources/xml/soap-response.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic/connector.jks
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic/connector.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic/policy-security-basic.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic/src/main/java/org/switchyard/quickstarts/demo/policy/security/basic/Transformers.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic/src/main/java/org/switchyard/quickstarts/demo/policy/security/basic/Work.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic/src/main/java/org/switchyard/quickstarts/demo/policy/security/basic/WorkAck.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic/src/main/java/org/switchyard/quickstarts/demo/policy/security/basic/WorkService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic/src/main/java/org/switchyard/quickstarts/demo/policy/security/basic/WorkServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic/src/test/java/org/switchyard/quickstarts/demo/policy/security/basic/WorkServiceMain.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic/src/test/resources/xml/soap-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic-propagate/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic-propagate/connector.jks
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic-propagate/connector.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic-propagate/policy-security-basic-propagate.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic-propagate/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic-propagate/src/main/java/org/switchyard/quickstarts/demo/policy/security/basic/propagate/BackEndService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic-propagate/src/main/java/org/switchyard/quickstarts/demo/policy/security/basic/propagate/BackEndServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic-propagate/src/main/java/org/switchyard/quickstarts/demo/policy/security/basic/propagate/Transformers.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic-propagate/src/main/java/org/switchyard/quickstarts/demo/policy/security/basic/propagate/Work.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic-propagate/src/main/java/org/switchyard/quickstarts/demo/policy/security/basic/propagate/WorkAck.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic-propagate/src/main/java/org/switchyard/quickstarts/demo/policy/security/basic/propagate/WorkService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic-propagate/src/main/java/org/switchyard/quickstarts/demo/policy/security/basic/propagate/WorkServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic-propagate/src/test/java/org/switchyard/quickstarts/demo/policy/security/basic/propagate/WorkServiceMain.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic-propagate/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-basic-propagate/src/test/resources/xml/soap-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-cert/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-cert/connector.jks
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-cert/connector.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-cert/policy-security-cert.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-cert/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-cert/roles.properties
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-cert/security-domain.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-cert/src/main/java/org/switchyard/quickstarts/demo/policy/security/cert/Transformers.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-cert/src/main/java/org/switchyard/quickstarts/demo/policy/security/cert/Work.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-cert/src/main/java/org/switchyard/quickstarts/demo/policy/security/cert/WorkAck.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-cert/src/main/java/org/switchyard/quickstarts/demo/policy/security/cert/WorkService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-cert/src/main/java/org/switchyard/quickstarts/demo/policy/security/cert/WorkServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-cert/src/test/java/org/switchyard/quickstarts/demo/policy/security/cert/WorkServiceMain.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-cert/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-cert/src/test/resources/xml/BinarySecurityToken.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-cert/src/test/resources/xml/soap-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-cert/users.jks
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/connector.jks
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/connector.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/picketlink-sts/WEB-INF/classes/org/picketlink/identity/federation/app/sts/PicketLinkSTService.class
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/picketlink-sts/WEB-INF/classes/picketlink-sts.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/picketlink-sts/WEB-INF/classes/roles.properties
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/picketlink-sts/WEB-INF/classes/sts_keystore.jks
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/picketlink-sts/WEB-INF/classes/users.properties
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/picketlink-sts/WEB-INF/jboss-web.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/picketlink-sts/WEB-INF/jboss-wsse-server.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/picketlink-sts/WEB-INF/web.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/picketlink-sts/WEB-INF/wsdl/PicketLinkSTS.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/picketlink-sts.war
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/policy-security-saml.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/security-domain.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/src/main/java/org/switchyard/quickstarts/demo/policy/security/saml/Transformers.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/src/main/java/org/switchyard/quickstarts/demo/policy/security/saml/Work.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/src/main/java/org/switchyard/quickstarts/demo/policy/security/saml/WorkAck.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/src/main/java/org/switchyard/quickstarts/demo/policy/security/saml/WorkService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/src/main/java/org/switchyard/quickstarts/demo/policy/security/saml/WorkServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/src/test/java/org/switchyard/quickstarts/demo/policy/security/saml/WorkServiceMain.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/src/test/resources/xml/soap-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-saml/sts-client.properties
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-signencrypt/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-signencrypt/connector.jks
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-signencrypt/connector.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-signencrypt/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-signencrypt/src/main/java/org/switchyard/quickstarts/demo/policy/security/wss/signencrypt/Transformers.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-signencrypt/src/main/java/org/switchyard/quickstarts/demo/policy/security/wss/signencrypt/Work.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-signencrypt/src/main/java/org/switchyard/quickstarts/demo/policy/security/wss/signencrypt/WorkAck.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-signencrypt/src/main/java/org/switchyard/quickstarts/demo/policy/security/wss/signencrypt/WorkService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-signencrypt/src/main/java/org/switchyard/quickstarts/demo/policy/security/wss/signencrypt/WorkServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-signencrypt/src/main/java/org/switchyard/quickstarts/demo/policy/security/wss/signencrypt/WorkServiceCallbackHandler.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-signencrypt/src/test/java/org/switchyard/quickstarts/demo/policy/security/wss/signencrypt/WorkServiceMain.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-signencrypt/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-signencrypt/src/test/resources/xml/insecure-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-signencrypt/src/test/resources/xml/secure-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-username/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-username/connector.jks
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-username/connector.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-username/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-username/src/main/java/org/switchyard/quickstarts/demo/policy/security/wss/username/Transformers.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-username/src/main/java/org/switchyard/quickstarts/demo/policy/security/wss/username/Work.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-username/src/main/java/org/switchyard/quickstarts/demo/policy/security/wss/username/WorkAck.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-username/src/main/java/org/switchyard/quickstarts/demo/policy/security/wss/username/WorkService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-username/src/main/java/org/switchyard/quickstarts/demo/policy/security/wss/username/WorkServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-username/src/main/resources/WEB-INF/jboss-web.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-username/src/test/java/org/switchyard/quickstarts/demo/policy/security/wss/username/WorkServiceMain.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-username/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-security-wss-username/src/test/resources/xml/soap-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-transaction/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-transaction/policy-transaction.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-transaction/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-transaction/src/main/java/org/switchyard/quickstarts/demo/policy/transaction/StoreService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-transaction/src/main/java/org/switchyard/quickstarts/demo/policy/transaction/TaskAService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-transaction/src/main/java/org/switchyard/quickstarts/demo/policy/transaction/TaskAServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-transaction/src/main/java/org/switchyard/quickstarts/demo/policy/transaction/TaskBService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-transaction/src/main/java/org/switchyard/quickstarts/demo/policy/transaction/TaskBServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-transaction/src/main/java/org/switchyard/quickstarts/demo/policy/transaction/TaskCService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-transaction/src/main/java/org/switchyard/quickstarts/demo/policy/transaction/TaskCServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-transaction/src/main/java/org/switchyard/quickstarts/demo/policy/transaction/WorkService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-transaction/src/main/java/org/switchyard/quickstarts/demo/policy/transaction/WorkServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-transaction/src/main/resources/test.txt
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-transaction/src/test/java/org/switchyard/quickstarts/demo/policy/transaction/HornetQClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-transaction/src/test/java/org/switchyard/quickstarts/demo/policy/transaction/JmsBindingTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-transaction/src/test/resources/arquillian.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-transaction/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/policy-transaction/src/test/resources/switchyard-quickstart-demo-policy-transaction-hornetq-jms.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/client/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/client/src/main/java/org/switchyard/quickstarts/demo/txpropagation/Application.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/client/src/main/java/org/switchyard/quickstarts/demo/txpropagation/Car.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/client/src/main/java/org/switchyard/quickstarts/demo/txpropagation/Deal.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/client/src/main/java/org/switchyard/quickstarts/demo/txpropagation/Offer.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/client/src/test/java/org/switchyard/quickstarts/demo/txpropagation/RemoteClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/credit/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/credit/src/main/java/org/switchyard/quickstarts/demo/txpropagation/Application.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/credit/src/main/java/org/switchyard/quickstarts/demo/txpropagation/ApplicationLogger.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/credit/src/main/java/org/switchyard/quickstarts/demo/txpropagation/Car.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/credit/src/main/java/org/switchyard/quickstarts/demo/txpropagation/CreditCheckService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/credit/src/main/java/org/switchyard/quickstarts/demo/txpropagation/CreditCheckServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/credit/src/main/java/org/switchyard/quickstarts/demo/txpropagation/Deal.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/credit/src/main/java/org/switchyard/quickstarts/demo/txpropagation/Offer.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/credit/src/main/java/org/switchyard/quickstarts/demo/txpropagation/RuleService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/credit/src/main/resources/RulesComponent.drl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/credit/src/test/java/org/switchyard/quickstarts/demo/txpropagation/CreditCheckTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/dealer/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/dealer/src/main/java/org/switchyard/quickstarts/demo/txpropagation/Application.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/dealer/src/main/java/org/switchyard/quickstarts/demo/txpropagation/Car.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/dealer/src/main/java/org/switchyard/quickstarts/demo/txpropagation/CreditCheckService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/dealer/src/main/java/org/switchyard/quickstarts/demo/txpropagation/Deal.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/dealer/src/main/java/org/switchyard/quickstarts/demo/txpropagation/DealLogger.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/dealer/src/main/java/org/switchyard/quickstarts/demo/txpropagation/Dealer.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/dealer/src/main/java/org/switchyard/quickstarts/demo/txpropagation/DealerBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/dealer/src/main/java/org/switchyard/quickstarts/demo/txpropagation/Offer.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/dealer/src/test/java/org/switchyard/quickstarts/demo/txpropagation/DealerTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/demos/transaction-propagation/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/ear-deployment/README.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/ear-deployment/artifacts/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/ear-deployment/artifacts/src/main/java/org/switchyard/quickstarts/demo/multiapp/InventoryService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/ear-deployment/artifacts/src/main/java/org/switchyard/quickstarts/demo/multiapp/Item.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/ear-deployment/artifacts/src/main/java/org/switchyard/quickstarts/demo/multiapp/ItemNotFoundException.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/ear-deployment/artifacts/src/main/java/org/switchyard/quickstarts/demo/multiapp/Order.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/ear-deployment/artifacts/src/main/java/org/switchyard/quickstarts/demo/multiapp/OrderAck.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/ear-deployment/artifacts/src/main/java/org/switchyard/quickstarts/demo/multiapp/OrderService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/ear-deployment/artifacts/src/main/resources/OrderService.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/ear-deployment/artifacts/src/main/resources/orderTypes.xsd
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/ear-deployment/ear-assembly/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/ear-deployment/order-consumer/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/ear-deployment/order-consumer/src/test/java/org/switchyard/quickstarts/eardeploy/OrderIntakeClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/ear-deployment/order-consumer/src/test/resources/order.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/ear-deployment/order-service/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/ear-deployment/order-service/src/main/java/org/switchyard/quickstarts/demo/multiapp/service/InventoryServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/ear-deployment/order-service/src/main/java/org/switchyard/quickstarts/demo/multiapp/service/OrderServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/ear-deployment/order-service/src/main/java/org/switchyard/quickstarts/demo/multiapp/service/Transformers.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/ear-deployment/order-service/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/ear-deployment/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/http-binding/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/http-binding/http-binding.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/http-binding/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/http-binding/src/main/java/org/switchyard/quickstarts/http/binding/CustomComposer.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/http-binding/src/main/java/org/switchyard/quickstarts/http/binding/QuoteService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/http-binding/src/main/java/org/switchyard/quickstarts/http/binding/QuoteServiceImpl.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/http-binding/src/main/java/org/switchyard/quickstarts/http/binding/SymbolService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/http-binding/src/main/java/org/switchyard/quickstarts/http/binding/SymbolServiceImpl.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/http-binding/src/test/java/org/switchyard/quickstarts/http/binding/HttpBindingClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/http-binding/src/test/java/org/switchyard/quickstarts/http/binding/HttpBindingTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/http-binding/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-inflow-hornetq/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-inflow-hornetq/jca-inflow-hornetq.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-inflow-hornetq/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-inflow-hornetq/src/main/java/org/switchyard/quickstarts/jca/inflow/GreetingGateway.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-inflow-hornetq/src/main/java/org/switchyard/quickstarts/jca/inflow/GreetingService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-inflow-hornetq/src/main/java/org/switchyard/quickstarts/jca/inflow/GreetingServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-inflow-hornetq/src/main/java/org/switchyard/quickstarts/jca/inflow/ObjectFactory.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-inflow-hornetq/src/main/java/org/switchyard/quickstarts/jca/inflow/Person.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-inflow-hornetq/src/main/java/org/switchyard/quickstarts/jca/inflow/package-info.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-inflow-hornetq/src/test/java/org/switchyard/quickstarts/jca/inflow/HornetQClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-inflow-hornetq/src/test/java/org/switchyard/quickstarts/jca/inflow/JCAInflowBindingTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-inflow-hornetq/src/test/resources/arquillian.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-inflow-hornetq/src/test/resources/switchyard-quickstart-jca-inflow-hornetq-jms.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-outbound-hornetq/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-outbound-hornetq/jca-outbound-hornetq.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-outbound-hornetq/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-outbound-hornetq/src/main/java/org/switchyard/quickstarts/jca/outbound/OrderService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-outbound-hornetq/src/main/java/org/switchyard/quickstarts/jca/outbound/OrderServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-outbound-hornetq/src/test/java/org/switchyard/quickstarts/jca/outbound/HornetQClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-outbound-hornetq/src/test/java/org/switchyard/quickstarts/jca/outbound/JCAOutboundBindingTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-outbound-hornetq/src/test/resources/arquillian.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-outbound-hornetq/src/test/resources/hornetq-jms.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-outbound-hornetq/src/test/resources/hornetq-ra.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/jca-outbound-hornetq/src/test/resources/switchyard-quickstart-jca-outbound-hornetq-jms.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/remote-invoker/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/remote-invoker/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/remote-invoker/remote-invoker.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/remote-invoker/src/main/java/org/switchyard/quickstarts/remoteinvoker/Application.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/remote-invoker/src/main/java/org/switchyard/quickstarts/remoteinvoker/Car.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/remote-invoker/src/main/java/org/switchyard/quickstarts/remoteinvoker/CreditCheck.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/remote-invoker/src/main/java/org/switchyard/quickstarts/remoteinvoker/Deal.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/remote-invoker/src/main/java/org/switchyard/quickstarts/remoteinvoker/Dealer.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/remote-invoker/src/main/java/org/switchyard/quickstarts/remoteinvoker/DealerBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/remote-invoker/src/main/java/org/switchyard/quickstarts/remoteinvoker/Offer.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/remote-invoker/src/main/resources/RulesComponent.drl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/remote-invoker/src/test/java/org/switchyard/quickstarts/remoteinvoker/CreditCheckTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/remote-invoker/src/test/java/org/switchyard/quickstarts/remoteinvoker/DealerTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/remote-invoker/src/test/java/org/switchyard/quickstarts/remoteinvoker/RemoteClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rest-binding/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rest-binding/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rest-binding/rest-binding.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rest-binding/src/main/java/org/switchyard/quickstarts/rest/binding/CustomComposer.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rest-binding/src/main/java/org/switchyard/quickstarts/rest/binding/Item.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rest-binding/src/main/java/org/switchyard/quickstarts/rest/binding/Order.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rest-binding/src/main/java/org/switchyard/quickstarts/rest/binding/OrderItem.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rest-binding/src/main/java/org/switchyard/quickstarts/rest/binding/OrderResource.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rest-binding/src/main/java/org/switchyard/quickstarts/rest/binding/OrderService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rest-binding/src/main/java/org/switchyard/quickstarts/rest/binding/OrderServiceImpl.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rest-binding/src/main/java/org/switchyard/quickstarts/rest/binding/TestResource.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rest-binding/src/main/java/org/switchyard/quickstarts/rest/binding/Transformers.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rest-binding/src/main/java/org/switchyard/quickstarts/rest/binding/Warehouse.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rest-binding/src/main/java/org/switchyard/quickstarts/rest/binding/WarehouseResource.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rest-binding/src/main/java/org/switchyard/quickstarts/rest/binding/WarehouseService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rest-binding/src/main/java/org/switchyard/quickstarts/rest/binding/WarehouseServiceImpl.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rest-binding/src/test/java/org/switchyard/quickstarts/rest/binding/RESTEasyBindingClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rest-binding/src/test/java/org/switchyard/quickstarts/rest/binding/RESTEasyBindingTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rest-binding/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-camel-cbr/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-camel-cbr/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-camel-cbr/rules-camel-cbr.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-camel-cbr/src/main/java/org/switchyard/quickstarts/rules/camel/cbr/BlueService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-camel-cbr/src/main/java/org/switchyard/quickstarts/rules/camel/cbr/BlueServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-camel-cbr/src/main/java/org/switchyard/quickstarts/rules/camel/cbr/Box.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-camel-cbr/src/main/java/org/switchyard/quickstarts/rules/camel/cbr/DestinationService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-camel-cbr/src/main/java/org/switchyard/quickstarts/rules/camel/cbr/GreenService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-camel-cbr/src/main/java/org/switchyard/quickstarts/rules/camel/cbr/GreenServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-camel-cbr/src/main/java/org/switchyard/quickstarts/rules/camel/cbr/RedService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-camel-cbr/src/main/java/org/switchyard/quickstarts/rules/camel/cbr/RedServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-camel-cbr/src/main/java/org/switchyard/quickstarts/rules/camel/cbr/RoutingService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-camel-cbr/src/main/java/org/switchyard/quickstarts/rules/camel/cbr/Widget.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-camel-cbr/src/test/java/org/switchyard/quickstarts/rules/camel/cbr/RulesCamelCBRTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-camel-cbr/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview/rules-interview.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview/src/main/java/org/switchyard/quickstarts/rules/interview/Applicant.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview/src/main/java/org/switchyard/quickstarts/rules/interview/Interview.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview/src/main/java/org/switchyard/quickstarts/rules/interview/Transformers.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview/src/test/java/org/switchyard/quickstarts/rules/interview/RulesInterviewTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview/src/test/java/org/switchyard/quickstarts/rules/interview/WebServiceTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview/src/test/resources/xml/soap-request-fail.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview/src/test/resources/xml/soap-request-pass.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview/src/test/resources/xml/soap-response-fail.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview/src/test/resources/xml/soap-response-pass.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-container/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-container/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-container/rules-interview-container.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-container/src/main/java/org/switchyard/quickstarts/rules/interview/Applicant.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-container/src/main/java/org/switchyard/quickstarts/rules/interview/Interview.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-container/src/main/java/org/switchyard/quickstarts/rules/interview/Transformers.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-container/src/main/resources/org/switchyard/quickstarts/rules/interview/Interview.drl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-container/src/test/java/org/switchyard/quickstarts/rules/interview/RulesInterviewTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-container/src/test/java/org/switchyard/quickstarts/rules/interview/WebServiceTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-container/src/test/resources/xml/soap-request-fail.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-container/src/test/resources/xml/soap-request-pass.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-container/src/test/resources/xml/soap-response-fail.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-container/src/test/resources/xml/soap-response-pass.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-dtable/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-dtable/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-dtable/rules-interview-dtable.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-dtable/src/main/java/org/switchyard/quickstarts/rules/interview/Applicant.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-dtable/src/main/java/org/switchyard/quickstarts/rules/interview/Interview.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-dtable/src/main/java/org/switchyard/quickstarts/rules/interview/Transformers.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-dtable/src/test/java/org/switchyard/quickstarts/rules/interview/RulesInterviewTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-dtable/src/test/java/org/switchyard/quickstarts/rules/interview/WebServiceTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-dtable/src/test/resources/xml/soap-request-fail.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-dtable/src/test/resources/xml/soap-request-pass.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-dtable/src/test/resources/xml/soap-response-fail.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/rules-interview-dtable/src/test/resources/xml/soap-response-pass.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/soap-addressing.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/main/java/org/switchyard/quickstarts/soap/addressing/ClientProcessor.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/main/java/org/switchyard/quickstarts/soap/addressing/FaultProcessor.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/main/java/org/switchyard/quickstarts/soap/addressing/ItemNotAvailable.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/main/java/org/switchyard/quickstarts/soap/addressing/ItemNotAvailableBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/main/java/org/switchyard/quickstarts/soap/addressing/Order.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/main/java/org/switchyard/quickstarts/soap/addressing/OrderProcessor.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/main/java/org/switchyard/quickstarts/soap/addressing/OrderReplyProcessor.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/main/java/org/switchyard/quickstarts/soap/addressing/OrderResponse.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/main/java/org/switchyard/quickstarts/soap/addressing/ServiceTransformers.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/main/java/org/switchyard/quickstarts/soap/addressing/UnknownItem.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/main/java/org/switchyard/quickstarts/soap/addressing/UnknownItemBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/main/java/org/switchyard/quickstarts/soap/addressing/WarehouseProcessor.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/main/resources/FaultService.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/main/resources/OrderService.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/main/resources/ResponseService.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/main/resources/WarehouseService.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/main/resources/client-route.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/main/resources/fault-route.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/main/resources/route.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/main/resources/route2.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/test/java/org/switchyard/quickstarts/soap/addressing/SoapAddressingClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/test/java/org/switchyard/quickstarts/soap/addressing/SoapAddressingTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/test/resources/xml/soap-addressing-missing.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/test/resources/xml/soap-fault-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/test/resources/xml/soap-fault-response.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/test/resources/xml/soap-request-faultto.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/test/resources/xml/soap-request-replyto.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-addressing/src/test/resources/xml/soap-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/soap-attachment.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/src/main/java/org/switchyard/quickstarts/soap/attachment/CustomProcessor.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/src/main/java/org/switchyard/quickstarts/soap/attachment/EchoService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/src/main/java/org/switchyard/quickstarts/soap/attachment/EchoServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/src/main/java/org/switchyard/quickstarts/soap/attachment/ImageRequest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/src/main/java/org/switchyard/quickstarts/soap/attachment/ImageResponse.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/src/main/java/org/switchyard/quickstarts/soap/attachment/ImageService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/src/main/java/org/switchyard/quickstarts/soap/attachment/ImageServiceImpl.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/src/main/java/org/switchyard/quickstarts/soap/attachment/InternalCustomProcessor.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/src/main/java/org/switchyard/quickstarts/soap/attachment/InternalEchoService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/src/main/java/org/switchyard/quickstarts/soap/attachment/InternalEchoServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/src/main/java/org/switchyard/quickstarts/soap/attachment/ServiceTransformers.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/src/main/resources/ImageService-External.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/src/main/resources/ImageService.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/src/main/resources/switchyard.png
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/src/test/java/org/switchyard/quickstarts/soap/attachment/SoapAttachmentClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/src/test/java/org/switchyard/quickstarts/soap/attachment/SoapAttachmentTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/src/test/resources/xml/soap-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-attachment/src/test/resources/xml/soap-response.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-binding-rpc/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-binding-rpc/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-binding-rpc/soap-binding-rpc.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-binding-rpc/src/main/java/org/switchyard/quickstarts/soap/binding/rpc/CustomComposer.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-binding-rpc/src/main/java/org/switchyard/quickstarts/soap/binding/rpc/HelloWorldService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-binding-rpc/src/main/java/org/switchyard/quickstarts/soap/binding/rpc/HelloWorldServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-binding-rpc/src/main/java/org/switchyard/quickstarts/soap/binding/rpc/SayHello.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-binding-rpc/src/main/java/org/switchyard/quickstarts/soap/binding/rpc/SayHelloExternal.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-binding-rpc/src/main/java/org/switchyard/quickstarts/soap/binding/rpc/ServiceTransformers.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-binding-rpc/src/main/resources/HelloWorldWS-External.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-binding-rpc/src/main/resources/HelloWorldWS.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-binding-rpc/src/test/java/org/switchyard/quickstarts/soap/binding/rpc/SoapBindingClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-binding-rpc/src/test/java/org/switchyard/quickstarts/soap/binding/rpc/SoapBindingTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-binding-rpc/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-binding-rpc/src/test/resources/xml/soap-request-500.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-binding-rpc/src/test/resources/xml/soap-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-binding-rpc/src/test/resources/xml/soap-response.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-mtom/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-mtom/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-mtom/soap-mtom.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-mtom/src/main/java/org/switchyard/quickstarts/soap/mtom/ExternalCustomProcessor.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-mtom/src/main/java/org/switchyard/quickstarts/soap/mtom/ImageService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-mtom/src/main/java/org/switchyard/quickstarts/soap/mtom/ImageServiceService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-mtom/src/main/java/org/switchyard/quickstarts/soap/mtom/InternalCustomProcessor.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-mtom/src/main/java/org/switchyard/quickstarts/soap/mtom/InternalResponseProcessor.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-mtom/src/main/java/org/switchyard/quickstarts/soap/mtom/ServiceTransformers.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-mtom/src/main/resources/ImageService-External.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-mtom/src/main/resources/ImageService.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-mtom/src/main/resources/switchyard.jpeg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-mtom/src/main/resources/switchyard_icon.jpeg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-mtom/src/test/java/org/switchyard/quickstarts/soap/mtom/SoapMtomClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-mtom/src/test/java/org/switchyard/quickstarts/soap/mtom/SoapMtomTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-mtom/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-mtom/src/test/resources/xml/soap-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/soap-mtom/src/test/resources/xml/soap-response.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-jaxb/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-jaxb/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-jaxb/src/main/java/org/switchyard/quickstarts/transform/jaxb/ObjectFactory.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-jaxb/src/main/java/org/switchyard/quickstarts/transform/jaxb/Order.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-jaxb/src/main/java/org/switchyard/quickstarts/transform/jaxb/OrderAck.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-jaxb/src/main/java/org/switchyard/quickstarts/transform/jaxb/OrderService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-jaxb/src/main/java/org/switchyard/quickstarts/transform/jaxb/OrderServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-jaxb/src/main/java/org/switchyard/quickstarts/transform/jaxb/package-info.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-jaxb/src/main/resources/wsdl/OrderService.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-jaxb/src/test/java/org/switchyard/quickstarts/transform/jaxb/JAXBClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-jaxb/src/test/java/org/switchyard/quickstarts/transform/jaxb/JaxbTransformationTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-jaxb/src/test/java/org/switchyard/quickstarts/transform/jaxb/WebServiceTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-jaxb/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-jaxb/src/test/resources/xml/order.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-jaxb/src/test/resources/xml/orderAck.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-jaxb/src/test/resources/xml/soap-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-jaxb/src/test/resources/xml/soap-response.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-jaxb/transform-jaxb.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-json/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-json/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-json/src/main/java/org/switchyard/quickstarts/transform/json/Order.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-json/src/main/java/org/switchyard/quickstarts/transform/json/OrderAck.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-json/src/main/java/org/switchyard/quickstarts/transform/json/OrderService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-json/src/main/java/org/switchyard/quickstarts/transform/json/OrderServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-json/src/test/java/org/switchyard/quickstarts/transform/json/JsonTransformationTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-json/src/test/resources/json/order.json
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-json/src/test/resources/json/orderAck.json
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-json/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-json/transform-json.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-smooks/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-smooks/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-smooks/src/main/java/org/switchyard/quickstarts/transform/smooks/Order.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-smooks/src/main/java/org/switchyard/quickstarts/transform/smooks/OrderAck.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-smooks/src/main/java/org/switchyard/quickstarts/transform/smooks/OrderService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-smooks/src/main/java/org/switchyard/quickstarts/transform/smooks/OrderServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-smooks/src/main/resources/smooks/OrderAck_XML.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-smooks/src/main/resources/smooks/Order_XML.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-smooks/src/test/java/org/switchyard/quickstarts/transform/smooks/ServiceTransformationTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-smooks/src/test/java/org/switchyard/quickstarts/transform/smooks/SmooksTransformationTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-smooks/src/test/resources/log4j.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-smooks/src/test/resources/xml/order.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-smooks/src/test/resources/xml/orderAck.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-smooks/transform-smooks.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-xslt/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-xslt/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-xslt/src/main/java/org/switchyard/quickstarts/transform/xslt/OrderService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-xslt/src/main/java/org/switchyard/quickstarts/transform/xslt/OrderServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-xslt/src/main/resources/wsdl/OrderService.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-xslt/src/main/resources/xslt/order.xslt
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-xslt/src/test/java/org/switchyard/quickstarts/transform/xslt/WebServiceTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-xslt/src/test/java/org/switchyard/quickstarts/transform/xslt/XSLTClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-xslt/src/test/java/org/switchyard/quickstarts/transform/xslt/XsltTransformationTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-xslt/src/test/resources/xml/order.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-xslt/src/test/resources/xml/orderAck.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-xslt/src/test/resources/xml/soap-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-xslt/src/test/resources/xml/soap-response.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/transform-xslt/transform-xslt.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/validate-xml/Readme.md
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/validate-xml/pom.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/validate-xml/src/main/java/org/switchyard/quickstarts/validate/xml/OrderService.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/validate-xml/src/main/java/org/switchyard/quickstarts/validate/xml/OrderServiceBean.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/validate-xml/src/main/resources/wsdl/OrderService.wsdl
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/validate-xml/src/main/resources/xsd/catalog.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/validate-xml/src/main/resources/xsd/orders-base.xsd
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/validate-xml/src/main/resources/xsd/orders.xsd
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/validate-xml/src/main/resources/xslt/order.xslt
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/validate-xml/src/test/java/org/switchyard/quickstarts/validate/xml/ValidationClient.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/validate-xml/src/test/java/org/switchyard/quickstarts/validate/xml/WebServiceTest.java
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/validate-xml/src/test/resources/xml/soap-request-with-invalid-element.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/validate-xml/src/test/resources/xml/soap-request.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/validate-xml/src/test/resources/xml/soap-response-validation-failed.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/validate-xml/src/test/resources/xml/soap-response.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/quickstarts/switchyard/validate-xml/validate-xml.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console-server.war/WEB-INF/lib/apache-mime4j-0.6-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console-server.war/WEB-INF/lib/commons-codec-1.4-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console-server.war/WEB-INF/lib/httpclient-4.2.1-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console-server.war/WEB-INF/lib/httpcore-4.2.1-redhat-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console-server.war/WEB-INF/lib/javassist-3.15.0-GA-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console-server.war/WEB-INF/lib/jboss-annotations-api_1.1_spec-1.0.1.Final-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console-server.war/WEB-INF/lib/jboss-jaxrs-api_1.1_spec-1.0.1.Final-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console-server.war/WEB-INF/lib/riftsaw-console-integration-3.0.0.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console-server.war/WEB-INF/lib/scannotation-1.0.2-redhat-2.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/403.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/ErraiApp.properties
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/ErraiService.properties
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/errai-proxy.json
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/mvc4g-conf.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/gwt/mosaic/ui/client/layout/MosaicPanel.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/ApplicationContext.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/Authentication$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/Authentication$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/Authentication$3.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/Authentication$4.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/Authentication$5.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/Authentication$6.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/Authentication$AuthCallback.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/Authentication.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/BootstrapAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/ConsoleConfig.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/ErraiApplication$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/ErraiApplication$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/ErraiApplication$3.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/ErraiApplication$4.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/ErraiApplication.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/LazyPanel.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/LoadingStatusAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/LoginAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/LoginView$1$1$1$1$1$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/LoginView$1$1$1$1$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/LoginView$1$1$1$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/LoginView$1$1$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/LoginView$1$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/LoginView$1$2$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/LoginView$1$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/LoginView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/LoginView$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/LoginView$3.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/LoginView$4.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/LoginView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/PreferencesModule$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/PreferencesModule.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/PreferencesView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/PreferencesView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/ServerPlugins.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/ServerStatusModule$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/ServerStatusModule.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/ServerStatusView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/URLBuilder.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/Version.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/AbstractRESTAction$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/AbstractRESTAction$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/AbstractRESTAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/AbstractView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/DataDriven.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/HeaderLabel.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/IFrameWindowCallback.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/IFrameWindowPanel$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/IFrameWindowPanel$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/IFrameWindowPanel.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/IconHeader.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/ListBoxToolbar.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/LoadingOverlay.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/Model.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/ModelCommands.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/ModelParts.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/PagingCallback.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/PagingPanel$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/PagingPanel$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/PagingPanel.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/PropertyGrid.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/common/WidgetWindowPanel.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/DeleteDeploymentAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/DeploymentDetailView$1$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/DeploymentDetailView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/DeploymentDetailView$2$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/DeploymentDetailView$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/DeploymentDetailView$3.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/DeploymentDetailView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/DeploymentListView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/DeploymentListView$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/DeploymentListView$3.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/DeploymentListView$4$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/DeploymentListView$4.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/DeploymentListView$5.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/DeploymentListView$6.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/DeploymentListView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/DeploymentModule$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/DeploymentModule.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/ExecuteJobAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/JobListModule$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/JobListModule.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/JobListView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/JobListView$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/JobListView$3.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/JobListView$4.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/JobListView$5.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/JobListView$6.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/JobListView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/ResourcePanel.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/ResumeDeploymentAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/SuspendDeploymentAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/UpdateDeploymentDetailAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/UpdateDeploymentsAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/UpdateJobsAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/engine/ViewDeploymentAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/events/BootstrapEvent.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/history/LoadProcessDefinitionsAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/history/LoadProcessHistoryAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/history/LoadProcessInstanceEventsAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/history/ProcessHistoryInstanceListView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/history/ProcessHistoryInstanceListView$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/history/ProcessHistoryInstanceListView$3.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/history/ProcessHistoryInstanceListView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/history/ProcessHistorySearchModule$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/history/ProcessHistorySearchModule.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/history/ProcessHistorySearchView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/history/ProcessHistorySearchView$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/history/ProcessHistorySearchView$3.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/history/ProcessHistorySearchView$4.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/history/ProcessHistorySearchView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/history/ProcessSearchEvent.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/icons/ConsoleIconBundle.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/model/DTOParser.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/model/JSOModel.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/model/JSOParser.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/monitor/ExecutionHistoryView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/monitor/ExecutionHistoryView$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/monitor/ExecutionHistoryView$3.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/monitor/ExecutionHistoryView$4.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/monitor/ExecutionHistoryView$5.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/monitor/ExecutionHistoryView$6.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/monitor/ExecutionHistoryView$7.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/monitor/ExecutionHistoryView$8.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/monitor/ExecutionHistoryView$9.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/monitor/ExecutionHistoryView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/monitor/GetProcessDefinitionsAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/monitor/LoadChartProcessInstanceEvent.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/monitor/LoadChartProcessInstancesAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/monitor/LoadDatasetEvent.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/monitor/LoadDatasetsAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/ActivityDiagramView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/ClearInstancesAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DefinitionHistoryListView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DefinitionHistoryListView$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DefinitionHistoryListView$3.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DefinitionHistoryListView$4.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DefinitionHistoryListView$5.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DefinitionHistoryListView$6.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DefinitionHistoryListView$7.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DefinitionHistoryListView$8.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DefinitionHistoryListView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DefinitionListView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DefinitionListView$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DefinitionListView$3.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DefinitionListView$4.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DefinitionListView$5.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DefinitionListView$6.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DefinitionListView$7.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DefinitionListView$8.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DefinitionListView$9.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DefinitionListView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DeleteDefinitionAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DeleteInstanceAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DeploymentPanel$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/DeploymentPanel.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/GetProcessInstanceEventsAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/HistoryInstanceListView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/HistoryInstanceListView$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/HistoryInstanceListView$3.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/HistoryInstanceListView$4.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/HistoryInstanceListView$5.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/HistoryInstanceListView$6.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/HistoryInstanceListView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceDataView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceDataView$DataEntry.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceDataView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceDetailView$1$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceDetailView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceDetailView$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceDetailView$3.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceDetailView$4.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceDetailView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceListView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceListView$10.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceListView$11.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceListView$12.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceListView$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceListView$3.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceListView$4$1$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceListView$4$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceListView$4.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceListView$5$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceListView$5.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceListView$6$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceListView$6.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceListView$7.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceListView$8.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceListView$9.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/InstanceListView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/JSONTree.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/LoadActivityDiagramAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/LoadHistoryDiagramAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/LoadInstanceActivityImage.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/MergedProcessHistoryView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/MergedProcessHistoryView$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/MergedProcessHistoryView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/MergedProcessView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/MergedProcessView$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/MergedProcessView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/ProcessDetailView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/ProcessDetailView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/ProcessHistoryModule$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/ProcessHistoryModule.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/ProcessModule$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/ProcessModule.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/SignalExecutionAction$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/SignalExecutionAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/StartNewInstanceAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/StateChangeAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/UpdateDefinitionsAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/UpdateHistoryDefinitionAction$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/UpdateHistoryDefinitionAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/UpdateHistoryDefinitionsAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/UpdateHistoryInstanceAction$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/UpdateHistoryInstanceAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/UpdateInstanceDataAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/UpdateInstanceDetailAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/UpdateInstancesAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/UpdateProcessDetailAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/events/ActivityDiagramResultEvent.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/events/HistoryActivityDiagramEvent.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/events/InstanceEvent.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/events/SignalInstanceEvent.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/v2/Explorer$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/v2/Explorer$10.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/v2/Explorer$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/v2/Explorer$3.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/v2/Explorer$4.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/v2/Explorer$5.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/v2/Explorer$6.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/v2/Explorer$7.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/v2/Explorer$8.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/v2/Explorer$9.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/v2/Explorer.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/process/v2/ProcessGroups.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/report/RenderDispatchEvent.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/report/RenderReportAction$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/report/RenderReportAction$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/report/RenderReportAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/report/ReportFrame.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/report/ReportLaunchPadView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/report/ReportLaunchPadView$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/report/ReportLaunchPadView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/report/ReportModule$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/report/ReportModule.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/report/ReportParamCallback.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/report/ReportParameterForm$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/report/ReportParameterForm$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/report/ReportParameterForm$InputField.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/report/ReportParameterForm.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/report/ReportView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/report/ReportView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/report/UpdateReportConfigAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/search/SearchDefinitionView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/search/SearchDefinitionView$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/search/SearchDefinitionView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/search/SearchDelegate.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/search/SearchWindow$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/search/SearchWindow.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/search/UpdateSearchDefinitionsAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/AbstractTaskList.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/AssignTaskAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/AssignedTasksModule$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/AssignedTasksModule.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/AssignedTasksView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/AssignedTasksView$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/AssignedTasksView$3.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/AssignedTasksView$4$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/AssignedTasksView$4.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/AssignedTasksView$5.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/AssignedTasksView$6.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/AssignedTasksView$7.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/AssignedTasksView$8.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/AssignedTasksView$9.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/AssignedTasksView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/ClaimTaskAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/LoadTasksAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/LoadTasksParticipationAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/OpenTasksModule$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/OpenTasksModule.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/OpenTasksView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/OpenTasksView$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/OpenTasksView$3.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/OpenTasksView$4.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/OpenTasksView$5.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/OpenTasksView$6.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/OpenTasksView$7.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/OpenTasksView$8.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/OpenTasksView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/ParticipantPanel$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/ParticipantPanel$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/ParticipantPanel.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/ReleaseTaskAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/ReloadAllTaskListsAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/TaskDetailView$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/TaskDetailView.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/UpdateDetailsAction.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/events/AssignEvent.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/events/DetailViewEvent.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/task/events/TaskIdentityEvent.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/util/ConsoleLog.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/util/DOMUtil.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/util/DateLocale.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/util/Debug.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/util/JSONWalk$JSONWrapper.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/util/JSONWalk.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/util/MapEntry.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/util/SimpleDateFormat.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/util/SimpleDateParser.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/util/WindowUtil$1.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/util/WindowUtil$2.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/util/WindowUtil$3.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/util/WindowUtil.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/client/util/regex/Pattern.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/rebind/WorkspaceGenerator.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/server/RestProxyAuthProvider.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/server/RestProxyBasicAuthProvider.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/server/RestProxySAMLBearerTokenAuthProvider.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/org/jboss/bpm/console/server/RestProxyServlet.class
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/classes/xhp.json
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/jboss-deployment-structure.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/jboss-web.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/lib/activity-monitor-ui-lib-1.2.1.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/lib/chronoscope-2.0_jboss.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/lib/chronoscope-api-2.0_jboss.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/lib/commons-io-1.4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/lib/dom4j-1.6.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/lib/errai-bus-1.1-Final.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/lib/errai-common-1.1-Final.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/lib/errai-ioc-1.1-Final.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/lib/google-collections-1.0.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/lib/google-gin-1.0.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/lib/guice-2.0-aopalliance.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/lib/guice-2.0.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/lib/guice-servlet-2.0.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/lib/gwtexporter-2.0.10.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/lib/javax.inject-1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/lib/jsr250-api-1.0.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/lib/log4j-1.2.9.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/lib/mvel2-2.0.18-RC4.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/lib/overlord-commons-config-1.1.0-redhat-7.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/lib/reflections-0.9.5-RC2_jboss-SP1.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/lib/report-shared-1.4.2.Final-redhat-8.jar
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/picketlink.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/WEB-INF/web.xml
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/0010536D6584F7D960B9FDCDA3C28C76.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/021DFBBBAF41DC56828A7BA0B08F8F01.gwt.rpc
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/0A9476898799A150D840F0B1C3672921.cache.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/0BE1D95B9FCC7A27D8BC2B6C77EDAA60.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/10506215143CF0440C2162F0FBC0AFFC.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/1AE67FE30463DAA7F4E25F666188B9CC.cache.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/209B65749F28DE0FFEF66B5309C3DE2D.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/22376E2914AEE6D96ED864C7049DA536.cache.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/22B44A5E1A35C00C4B6A6EB7CDB00EDA.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/2FD85E3D786226DBDA1BD563673E80E3.cache.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/35577F8B04BB97CC294FF73FCF1735CA.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/396F806CD63ABD414BFBB9D57429F05B.cache.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/403F9B8DCA401BB24E8C3D4363BE9259.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/40BAF81124143A595056A9CCA0E9DBBA.cache.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/48E68305F34979F37F7D8EC1526A54EE.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/4A996AA1200C3D6F90930461C3F48E61.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/5AB512DEC20276BD2D53A605111A4897.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/5F4429FFE5B2BF28D2F1F770E4AD440C.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/7201293C4A2B4C61532D0652C5ED9E0D.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/725C079B00C4B52A0212ABB89E4A49BA.cache.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/76A640FEB58BE18082F87C839D88381E.cache.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/873B180EA14DD127CE748666E5530A7B.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/8EE0139E3133A894F10E4D4759A02AE4.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/9A1AB55844FC998CEF61B97C11EF3C91.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/A765BD4B6DB3356D2EADA1B454E1AEF7.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/A7FAF665C2E4FD8DF5AC21DBF3750CB8.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/AE1C1C4D580D33A664B903058FE836CA.cache.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/B3135090054C74F5E0288FCA0FE7A503.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/B8302611EA875EE2BE7ECFB88097DC6E.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/BB111F6E9D02AEF5A56FB4A633C98BC5.cache.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/C10B8F9B0264009CADE5255D5C76DD5D.cache.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/C55ED2DABA0D592B4523197B84EC876A.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/C612B891310FEAB0E73899B9A5B24E62.cache.swf
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/CCAA3D4B1F68DA32B6A6D6E37FAB0A05.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/Chronoscope.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/D35B40C9CAB04FE01FA11825F26E533B.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/DA85A588E4B1ABE33C2C1B3AFF919B08.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/DF7764EEC1903CD03C9545B354D8D8E4.cache.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/E325BC773A684202BF6B61EF2923E8B4.cache.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/E44767377485D18D6B6864F65BA8EF73.cache.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/EDC7827FEEA59EE44AD790B1C6430C45.cache.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/Workspace.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/app.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/app.nocache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/blank.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/chome-override.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/clear.cache.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/console.config.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/console.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/0010536D6584F7D960B9FDCDA3C28C76/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/0010536D6584F7D960B9FDCDA3C28C76/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/0010536D6584F7D960B9FDCDA3C28C76/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/0010536D6584F7D960B9FDCDA3C28C76/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/0010536D6584F7D960B9FDCDA3C28C76/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/0010536D6584F7D960B9FDCDA3C28C76/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/0010536D6584F7D960B9FDCDA3C28C76/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/0010536D6584F7D960B9FDCDA3C28C76/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/0BE1D95B9FCC7A27D8BC2B6C77EDAA60/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/0BE1D95B9FCC7A27D8BC2B6C77EDAA60/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/0BE1D95B9FCC7A27D8BC2B6C77EDAA60/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/0BE1D95B9FCC7A27D8BC2B6C77EDAA60/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/0BE1D95B9FCC7A27D8BC2B6C77EDAA60/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/0BE1D95B9FCC7A27D8BC2B6C77EDAA60/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/0BE1D95B9FCC7A27D8BC2B6C77EDAA60/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/0BE1D95B9FCC7A27D8BC2B6C77EDAA60/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/10506215143CF0440C2162F0FBC0AFFC/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/10506215143CF0440C2162F0FBC0AFFC/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/10506215143CF0440C2162F0FBC0AFFC/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/10506215143CF0440C2162F0FBC0AFFC/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/10506215143CF0440C2162F0FBC0AFFC/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/10506215143CF0440C2162F0FBC0AFFC/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/10506215143CF0440C2162F0FBC0AFFC/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/10506215143CF0440C2162F0FBC0AFFC/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/209B65749F28DE0FFEF66B5309C3DE2D/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/209B65749F28DE0FFEF66B5309C3DE2D/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/209B65749F28DE0FFEF66B5309C3DE2D/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/209B65749F28DE0FFEF66B5309C3DE2D/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/209B65749F28DE0FFEF66B5309C3DE2D/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/209B65749F28DE0FFEF66B5309C3DE2D/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/209B65749F28DE0FFEF66B5309C3DE2D/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/209B65749F28DE0FFEF66B5309C3DE2D/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/22B44A5E1A35C00C4B6A6EB7CDB00EDA/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/22B44A5E1A35C00C4B6A6EB7CDB00EDA/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/22B44A5E1A35C00C4B6A6EB7CDB00EDA/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/22B44A5E1A35C00C4B6A6EB7CDB00EDA/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/22B44A5E1A35C00C4B6A6EB7CDB00EDA/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/22B44A5E1A35C00C4B6A6EB7CDB00EDA/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/22B44A5E1A35C00C4B6A6EB7CDB00EDA/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/22B44A5E1A35C00C4B6A6EB7CDB00EDA/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/35577F8B04BB97CC294FF73FCF1735CA/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/35577F8B04BB97CC294FF73FCF1735CA/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/35577F8B04BB97CC294FF73FCF1735CA/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/35577F8B04BB97CC294FF73FCF1735CA/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/35577F8B04BB97CC294FF73FCF1735CA/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/35577F8B04BB97CC294FF73FCF1735CA/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/35577F8B04BB97CC294FF73FCF1735CA/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/35577F8B04BB97CC294FF73FCF1735CA/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/403F9B8DCA401BB24E8C3D4363BE9259/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/403F9B8DCA401BB24E8C3D4363BE9259/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/403F9B8DCA401BB24E8C3D4363BE9259/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/403F9B8DCA401BB24E8C3D4363BE9259/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/403F9B8DCA401BB24E8C3D4363BE9259/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/403F9B8DCA401BB24E8C3D4363BE9259/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/403F9B8DCA401BB24E8C3D4363BE9259/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/403F9B8DCA401BB24E8C3D4363BE9259/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/48E68305F34979F37F7D8EC1526A54EE/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/48E68305F34979F37F7D8EC1526A54EE/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/48E68305F34979F37F7D8EC1526A54EE/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/48E68305F34979F37F7D8EC1526A54EE/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/48E68305F34979F37F7D8EC1526A54EE/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/48E68305F34979F37F7D8EC1526A54EE/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/48E68305F34979F37F7D8EC1526A54EE/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/48E68305F34979F37F7D8EC1526A54EE/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/4A996AA1200C3D6F90930461C3F48E61/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/4A996AA1200C3D6F90930461C3F48E61/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/4A996AA1200C3D6F90930461C3F48E61/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/4A996AA1200C3D6F90930461C3F48E61/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/4A996AA1200C3D6F90930461C3F48E61/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/4A996AA1200C3D6F90930461C3F48E61/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/4A996AA1200C3D6F90930461C3F48E61/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/4A996AA1200C3D6F90930461C3F48E61/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/5AB512DEC20276BD2D53A605111A4897/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/5AB512DEC20276BD2D53A605111A4897/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/5AB512DEC20276BD2D53A605111A4897/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/5AB512DEC20276BD2D53A605111A4897/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/5AB512DEC20276BD2D53A605111A4897/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/5AB512DEC20276BD2D53A605111A4897/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/5AB512DEC20276BD2D53A605111A4897/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/5AB512DEC20276BD2D53A605111A4897/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/5F4429FFE5B2BF28D2F1F770E4AD440C/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/5F4429FFE5B2BF28D2F1F770E4AD440C/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/5F4429FFE5B2BF28D2F1F770E4AD440C/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/5F4429FFE5B2BF28D2F1F770E4AD440C/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/5F4429FFE5B2BF28D2F1F770E4AD440C/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/5F4429FFE5B2BF28D2F1F770E4AD440C/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/5F4429FFE5B2BF28D2F1F770E4AD440C/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/5F4429FFE5B2BF28D2F1F770E4AD440C/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/7201293C4A2B4C61532D0652C5ED9E0D/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/7201293C4A2B4C61532D0652C5ED9E0D/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/7201293C4A2B4C61532D0652C5ED9E0D/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/7201293C4A2B4C61532D0652C5ED9E0D/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/7201293C4A2B4C61532D0652C5ED9E0D/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/7201293C4A2B4C61532D0652C5ED9E0D/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/7201293C4A2B4C61532D0652C5ED9E0D/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/7201293C4A2B4C61532D0652C5ED9E0D/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/873B180EA14DD127CE748666E5530A7B/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/873B180EA14DD127CE748666E5530A7B/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/873B180EA14DD127CE748666E5530A7B/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/873B180EA14DD127CE748666E5530A7B/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/873B180EA14DD127CE748666E5530A7B/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/873B180EA14DD127CE748666E5530A7B/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/873B180EA14DD127CE748666E5530A7B/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/873B180EA14DD127CE748666E5530A7B/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/8EE0139E3133A894F10E4D4759A02AE4/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/8EE0139E3133A894F10E4D4759A02AE4/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/8EE0139E3133A894F10E4D4759A02AE4/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/8EE0139E3133A894F10E4D4759A02AE4/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/8EE0139E3133A894F10E4D4759A02AE4/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/8EE0139E3133A894F10E4D4759A02AE4/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/8EE0139E3133A894F10E4D4759A02AE4/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/8EE0139E3133A894F10E4D4759A02AE4/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/9A1AB55844FC998CEF61B97C11EF3C91/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/9A1AB55844FC998CEF61B97C11EF3C91/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/9A1AB55844FC998CEF61B97C11EF3C91/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/9A1AB55844FC998CEF61B97C11EF3C91/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/9A1AB55844FC998CEF61B97C11EF3C91/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/9A1AB55844FC998CEF61B97C11EF3C91/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/9A1AB55844FC998CEF61B97C11EF3C91/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/9A1AB55844FC998CEF61B97C11EF3C91/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/A765BD4B6DB3356D2EADA1B454E1AEF7/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/A765BD4B6DB3356D2EADA1B454E1AEF7/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/A765BD4B6DB3356D2EADA1B454E1AEF7/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/A765BD4B6DB3356D2EADA1B454E1AEF7/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/A765BD4B6DB3356D2EADA1B454E1AEF7/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/A765BD4B6DB3356D2EADA1B454E1AEF7/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/A765BD4B6DB3356D2EADA1B454E1AEF7/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/A765BD4B6DB3356D2EADA1B454E1AEF7/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/A7FAF665C2E4FD8DF5AC21DBF3750CB8/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/A7FAF665C2E4FD8DF5AC21DBF3750CB8/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/A7FAF665C2E4FD8DF5AC21DBF3750CB8/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/A7FAF665C2E4FD8DF5AC21DBF3750CB8/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/A7FAF665C2E4FD8DF5AC21DBF3750CB8/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/A7FAF665C2E4FD8DF5AC21DBF3750CB8/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/A7FAF665C2E4FD8DF5AC21DBF3750CB8/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/A7FAF665C2E4FD8DF5AC21DBF3750CB8/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/B3135090054C74F5E0288FCA0FE7A503/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/B3135090054C74F5E0288FCA0FE7A503/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/B3135090054C74F5E0288FCA0FE7A503/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/B3135090054C74F5E0288FCA0FE7A503/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/B3135090054C74F5E0288FCA0FE7A503/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/B3135090054C74F5E0288FCA0FE7A503/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/B3135090054C74F5E0288FCA0FE7A503/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/B3135090054C74F5E0288FCA0FE7A503/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/B8302611EA875EE2BE7ECFB88097DC6E/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/B8302611EA875EE2BE7ECFB88097DC6E/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/B8302611EA875EE2BE7ECFB88097DC6E/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/B8302611EA875EE2BE7ECFB88097DC6E/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/B8302611EA875EE2BE7ECFB88097DC6E/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/B8302611EA875EE2BE7ECFB88097DC6E/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/B8302611EA875EE2BE7ECFB88097DC6E/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/B8302611EA875EE2BE7ECFB88097DC6E/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/C55ED2DABA0D592B4523197B84EC876A/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/C55ED2DABA0D592B4523197B84EC876A/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/C55ED2DABA0D592B4523197B84EC876A/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/C55ED2DABA0D592B4523197B84EC876A/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/C55ED2DABA0D592B4523197B84EC876A/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/C55ED2DABA0D592B4523197B84EC876A/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/C55ED2DABA0D592B4523197B84EC876A/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/C55ED2DABA0D592B4523197B84EC876A/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/CCAA3D4B1F68DA32B6A6D6E37FAB0A05/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/CCAA3D4B1F68DA32B6A6D6E37FAB0A05/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/CCAA3D4B1F68DA32B6A6D6E37FAB0A05/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/CCAA3D4B1F68DA32B6A6D6E37FAB0A05/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/CCAA3D4B1F68DA32B6A6D6E37FAB0A05/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/CCAA3D4B1F68DA32B6A6D6E37FAB0A05/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/CCAA3D4B1F68DA32B6A6D6E37FAB0A05/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/CCAA3D4B1F68DA32B6A6D6E37FAB0A05/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/D35B40C9CAB04FE01FA11825F26E533B/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/D35B40C9CAB04FE01FA11825F26E533B/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/D35B40C9CAB04FE01FA11825F26E533B/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/D35B40C9CAB04FE01FA11825F26E533B/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/D35B40C9CAB04FE01FA11825F26E533B/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/D35B40C9CAB04FE01FA11825F26E533B/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/D35B40C9CAB04FE01FA11825F26E533B/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/D35B40C9CAB04FE01FA11825F26E533B/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/DA85A588E4B1ABE33C2C1B3AFF919B08/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/DA85A588E4B1ABE33C2C1B3AFF919B08/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/DA85A588E4B1ABE33C2C1B3AFF919B08/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/DA85A588E4B1ABE33C2C1B3AFF919B08/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/DA85A588E4B1ABE33C2C1B3AFF919B08/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/DA85A588E4B1ABE33C2C1B3AFF919B08/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/DA85A588E4B1ABE33C2C1B3AFF919B08/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/DA85A588E4B1ABE33C2C1B3AFF919B08/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/E325BC773A684202BF6B61EF2923E8B4/1.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/E325BC773A684202BF6B61EF2923E8B4/2.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/E325BC773A684202BF6B61EF2923E8B4/3.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/E325BC773A684202BF6B61EF2923E8B4/4.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/E325BC773A684202BF6B61EF2923E8B4/5.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/E325BC773A684202BF6B61EF2923E8B4/6.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/E325BC773A684202BF6B61EF2923E8B4/7.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/deferredjs/E325BC773A684202BF6B61EF2923E8B4/8.cache.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/errai-default.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/errai-workspaces-default.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/flcanvas.swf
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/chrome.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/chrome_rtl.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/button/menu-button-arrow-disabled.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/button/menu-button-arrow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/button/split-button-arrow-active.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/button/split-button-arrow-disabled.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/button/split-button-arrow-focus.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/button/split-button-arrow-hover.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/button/split-button-arrow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/combobox/arrow-down-disabled.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/combobox/arrow-down.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/combobox/ellipsis-disabled.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/combobox/ellipsis.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/corner.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/corner_ie6.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/fastree/selectionBar.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/fastree/treeClosed.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/fastree/treeLoading.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/fastree/treeOpen.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/glasspanel/blue_ridge.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/hborder.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/hborder_ie6.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/ie6/corner_dialog_topleft.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/ie6/corner_dialog_topright.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/ie6/hborder_blue_shadow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/ie6/hborder_gray_shadow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/ie6/vborder_blue_shadow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/ie6/vborder_gray_shadow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/scrolltable/bg_header_gradient.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/splitPanelThumb.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/valuespinner/bg_textbox.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/vborder.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/images/vborder_ie6.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/mosaic.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt/chrome/mosaic_rtl.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/gwt-log-triangle-10x10.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/header_background.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/hosted.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/bg_headergradient.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/bg_listgradient.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/bg_stackpanel.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/bg_tab.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/bg_tab_selected.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/bgfade.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/bgleftgradient.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/corner.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/default-icon.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/expand-button.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/guvnorlogo.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/guvnorlogo.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/hborder.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ie6/corner_dialog_topleft.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ie6/corner_dialog_topright.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ie6/hborder_blue_shadow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ie6/hborder_gray_shadow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ie6/vborder_blue_shadow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ie6/vborder_gray_shadow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/jbosslogo.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/listhighlightbg.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/loading.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/navbargradient.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/tab-active.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/tab.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/titlegradient-sel.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/titlegradient.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/titlegradient.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/traynotifybg.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/accept.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/anchor.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_cascade.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_double.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_form.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_form_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_form_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_form_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_form_magnify.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_get.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_home.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_lightning.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_osx.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_osx_terminal.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_put.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_side_boxes.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_side_contract.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_side_expand.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_side_list.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_side_tree.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_split.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_tile_horizontal.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_tile_vertical.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_view_columns.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_view_detail.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_view_gallery.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_view_icons.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_view_list.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_view_tile.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_xp.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/application_xp_terminal.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/arrow_branch.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/arrow_divide.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/arrow_down.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/arrow_in.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/arrow_inout.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/arrow_join.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/arrow_left.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/arrow_merge.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/arrow_out.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/arrow_redo.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/arrow_refresh.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/arrow_refresh_small.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/arrow_right.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/arrow_rotate_anticlockwise.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/arrow_rotate_clockwise.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/arrow_switch.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/arrow_turn_left.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/arrow_turn_right.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/arrow_undo.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/arrow_up.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/asterisk_orange.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/asterisk_yellow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/attach.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/award_star_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/award_star_bronze_1.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/award_star_bronze_2.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/award_star_bronze_3.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/award_star_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/award_star_gold_1.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/award_star_gold_2.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/award_star_gold_3.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/award_star_silver_1.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/award_star_silver_2.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/award_star_silver_3.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/basket.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/basket_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/basket_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/basket_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/basket_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/basket_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/basket_put.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/basket_remove.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bell.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bell_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bell_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bell_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bell_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bell_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bin.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bin_closed.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bin_empty.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bomb.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/book.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/book_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/book_addresses.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/book_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/book_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/book_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/book_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/book_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/book_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/book_next.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/book_open.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/book_previous.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/box.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/brick.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/brick_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/brick_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/brick_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/brick_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/brick_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/brick_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bricks.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/briefcase.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bug.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bug_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bug_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bug_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bug_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bug_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bug_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/building.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/building_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/building_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/building_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/building_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/building_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/building_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/building_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_arrow_bottom.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_arrow_down.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_arrow_top.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_arrow_up.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_black.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_blue.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_disk.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_feed.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_green.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_orange.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_picture.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_pink.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_purple.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_red.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_star.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_toggle_minus.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_toggle_plus.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_white.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_wrench.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/bullet_yellow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cake.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/calculator.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/calculator_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/calculator_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/calculator_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/calculator_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/calculator_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/calendar.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/calendar_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/calendar_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/calendar_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/calendar_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/calendar_view_day.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/calendar_view_month.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/calendar_view_week.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/camera.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/camera_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/camera_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/camera_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/camera_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/camera_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/camera_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/camera_small.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/car.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/car_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/car_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cart.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cart_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cart_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cart_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cart_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cart_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cart_put.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cart_remove.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cd.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cd_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cd_burn.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cd_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cd_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cd_eject.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cd_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_bar.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_bar_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_bar_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_bar_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_bar_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_bar_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_curve.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_curve_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_curve_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_curve_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_curve_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_curve_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_curve_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_line.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_line_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_line_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_line_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_line_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_line_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_organisation.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_organisation_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_organisation_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_pie.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_pie_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_pie_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_pie_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_pie_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/chart_pie_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/clock.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/clock_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/clock_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/clock_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/clock_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/clock_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/clock_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/clock_pause.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/clock_play.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/clock_red.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/clock_stop.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cog.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cog_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cog_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cog_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cog_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cog_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/coins.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/coins_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/coins_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/color_swatch.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/color_wheel.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/comment.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/comment_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/comment_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/comment_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/comments.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/comments_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/comments_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/compress.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/computer.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/computer_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/computer_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/computer_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/computer_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/computer_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/computer_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/computer_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/connect.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/contrast.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/contrast_decrease.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/contrast_high.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/contrast_increase.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/contrast_low.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/control_eject.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/control_eject_blue.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/control_end.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/control_end_blue.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/control_equalizer.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/control_equalizer_blue.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/control_fastforward.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/control_fastforward_blue.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/control_pause.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/control_pause_blue.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/control_play.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/control_play_blue.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/control_repeat.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/control_repeat_blue.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/control_rewind.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/control_rewind_blue.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/control_start.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/control_start_blue.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/control_stop.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/control_stop_blue.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/controller.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/controller_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/controller_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/controller_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/creditcards.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cross.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/css.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/css_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/css_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/css_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/css_valid.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cup.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cup_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cup_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cup_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cup_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cup_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cup_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cup_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cursor.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cut.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/cut_red.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/database.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/database_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/database_connect.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/database_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/database_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/database_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/database_gear.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/database_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/database_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/database_lightning.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/database_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/database_refresh.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/database_save.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/database_table.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/date.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/date_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/date_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/date_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/date_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/date_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/date_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/date_magnify.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/date_next.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/date_previous.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/disconnect.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/disk.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/disk_multiple.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/door.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/door_in.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/door_open.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/door_out.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/drink.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/drink_empty.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/drive.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/drive_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/drive_burn.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/drive_cd.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/drive_cd_empty.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/drive_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/drive_disk.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/drive_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/drive_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/drive_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/drive_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/drive_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/drive_magnify.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/drive_network.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/drive_rename.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/drive_user.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/drive_web.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/dvd.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/dvd_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/dvd_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/dvd_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/dvd_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/dvd_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/dvd_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/dvd_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/email.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/email_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/email_attach.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/email_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/email_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/email_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/email_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/email_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/email_open.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/email_open_image.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/emoticon_evilgrin.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/emoticon_grin.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/emoticon_happy.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/emoticon_smile.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/emoticon_surprised.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/emoticon_tongue.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/emoticon_unhappy.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/emoticon_waii.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/emoticon_wink.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/error_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/error_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/error_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/exclamation.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/eye.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/feed.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/feed_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/feed_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/feed_disk.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/feed_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/feed_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/feed_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/feed_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/feed_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/feed_magnify.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/female.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/film.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/film_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/film_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/film_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/film_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/film_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/film_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/film_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/film_save.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/find.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/flag_green.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/flag_orange.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/flag_pink.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/flag_purple.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/flag_red.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/flag_yellow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_bell.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_brick.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_bug.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_camera.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_database.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_explore.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_feed.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_find.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_heart.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_image.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_lightbulb.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_magnify.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_page.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_page_white.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_palette.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_picture.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_star.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_table.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_user.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/folder_wrench.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/font.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/font_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/font_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/font_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/group.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/group_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/group_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/group_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/group_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/group_gear.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/group_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/group_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/group_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/heart.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/heart_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/heart_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/help.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/hourglass.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/hourglass_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/hourglass_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/hourglass_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/hourglass_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/house.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/house_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/house_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/html.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/html_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/html_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/html_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/html_valid.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/image.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/image_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/image_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/image_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/image_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/images.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/information.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/ipod.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/ipod_cast.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/ipod_cast_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/ipod_cast_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/ipod_sound.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/joystick.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/joystick_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/joystick_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/joystick_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/key_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/key_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/key_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/keyboard.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/keyboard_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/keyboard_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/keyboard_magnify.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/layers.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/layout.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/layout_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/layout_content.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/layout_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/layout_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/layout_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/layout_header.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/layout_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/layout_sidebar.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lightbulb.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lightbulb_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lightbulb_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lightbulb_off.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lightning.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lightning_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lightning_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lightning_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/link_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/link_break.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/link_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/link_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/link_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/link_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lock.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lock_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lock_break.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lock_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lock_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lock_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lock_open.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lorry.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lorry_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lorry_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lorry_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lorry_flatbed.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lorry_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/lorry_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/magifier_zoom_out.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/magnifier.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/magnifier_zoom_in.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/male.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/map.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/map_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/map_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/map_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/map_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/map_magnify.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/medal_bronze_1.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/medal_bronze_2.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/medal_bronze_3.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/medal_bronze_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/medal_bronze_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/medal_gold_1.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/medal_gold_2.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/medal_gold_3.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/medal_gold_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/medal_gold_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/medal_silver_1.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/medal_silver_2.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/medal_silver_3.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/medal_silver_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/medal_silver_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/money.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/money_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/money_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/money_dollar.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/money_euro.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/money_pound.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/money_yen.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/monitor.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/monitor_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/monitor_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/monitor_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/monitor_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/monitor_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/monitor_lightning.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/monitor_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/mouse.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/mouse_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/mouse_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/mouse_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/music.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/new.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/newspaper.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/newspaper_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/newspaper_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/newspaper_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/newspaper_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/note.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/note_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/note_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/note_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/note_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/note_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/overlays.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/package.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/package_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/package_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/package_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/package_green.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/package_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_attach.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_code.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_copy.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_excel.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_find.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_gear.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_green.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_lightning.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_paintbrush.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_paste.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_red.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_refresh.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_save.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_acrobat.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_actionscript.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_c.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_camera.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_cd.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_code.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_code_red.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_coldfusion.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_compressed.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_copy.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_cplusplus.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_csharp.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_cup.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_database.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_dvd.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_excel.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_find.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_flash.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_freehand.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_gear.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_get.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_h.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_horizontal.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_lightning.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_magnify.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_medal.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_office.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_paint.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_paintbrush.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_paste.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_php.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_picture.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_powerpoint.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_put.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_ruby.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_stack.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_star.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_swoosh.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_text.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_text_width.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_tux.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_vector.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_visualstudio.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_width.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_word.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_world.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_wrench.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_white_zip.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_word.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/page_world.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/paintbrush.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/paintcan.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/palette.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/paste_plain.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/paste_word.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/pencil.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/pencil_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/pencil_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/pencil_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/phone.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/phone_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/phone_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/phone_sound.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/photo.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/photo_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/photo_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/photo_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/photos.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/picture.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/picture_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/picture_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/picture_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/picture_empty.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/picture_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/picture_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/picture_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/picture_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/picture_save.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/pictures.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/pilcrow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/pill.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/pill_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/pill_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/pill_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/plugin.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/plugin_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/plugin_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/plugin_disabled.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/plugin_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/plugin_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/plugin_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/plugin_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/printer.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/printer_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/printer_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/printer_empty.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/printer_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/rainbow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/report.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/report_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/report_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/report_disk.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/report_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/report_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/report_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/report_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/report_magnify.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/report_picture.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/report_user.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/report_word.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/resultset_first.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/resultset_last.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/resultset_next.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/resultset_previous.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/rosette.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/rss.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/rss_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/rss_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/rss_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/rss_valid.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/ruby.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/ruby_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/ruby_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/ruby_gear.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/ruby_get.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/ruby_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/ruby_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/ruby_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/ruby_put.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/script.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/script_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/script_code.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/script_code_red.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/script_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/script_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/script_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/script_gear.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/script_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/script_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/script_lightning.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/script_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/script_palette.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/script_save.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/security.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/server.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/server_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/server_chart.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/server_compressed.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/server_connect.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/server_database.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/server_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/server_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/server_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/server_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/server_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/server_lightning.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/server_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/server_uncompressed.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shading.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_align_bottom.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_align_center.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_align_left.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_align_middle.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_align_right.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_align_top.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_flip_horizontal.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_flip_vertical.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_group.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_handles.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_move_back.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_move_backwards.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_move_forwards.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_move_front.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_rotate_anticlockwise.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_rotate_clockwise.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_square.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_square_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_square_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_square_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_square_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_square_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_square_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_square_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shape_ungroup.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shell.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shield.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shield_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shield_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/shield_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/sitemap.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/sitemap_color.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/sound.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/sound_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/sound_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/sound_low.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/sound_mute.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/sound_none.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/spellcheck.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/sport_8ball.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/sport_basketball.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/sport_football.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/sport_golf.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/sport_raquet.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/sport_shuttlecock.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/sport_soccer.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/sport_tennis.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/star.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/status_away.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/status_busy.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/status_offline.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/status_online.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/stop.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/style.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/style_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/style_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/style_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/style_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/sum.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/system.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/tab.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/tab_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/tab_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/tab_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/tab_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/table.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/table_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/table_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/table_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/table_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/table_gear.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/table_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/table_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/table_lightning.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/table_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/table_multiple.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/table_refresh.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/table_relationship.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/table_row_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/table_row_insert.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/table_save.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/table_sort.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/tag.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/tag_blue.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/tag_blue_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/tag_blue_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/tag_blue_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/tag_green.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/tag_orange.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/tag_pink.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/tag_purple.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/tag_red.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/tag_yellow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/telephone.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/telephone_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/telephone_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/telephone_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/telephone_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/telephone_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/telephone_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/telephone_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/television.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/television_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/television_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_align_center.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_align_justify.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_align_left.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_align_right.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_allcaps.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_bold.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_columns.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_dropcaps.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_heading_1.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_heading_2.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_heading_3.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_heading_4.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_heading_5.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_heading_6.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_horizontalrule.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_indent.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_indent_remove.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_italic.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_kerning.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_letter_omega.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_letterspacing.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_linespacing.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_list_bullets.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_list_numbers.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_lowercase.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_padding_bottom.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_padding_left.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_padding_right.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_padding_top.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_replace.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_signature.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_smallcaps.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_strikethrough.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_subscript.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_superscript.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_underline.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/text_uppercase.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/textfield.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/textfield_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/textfield_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/textfield_key.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/textfield_rename.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/thumb_down.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/thumb_up.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/tick.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/time.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/time_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/time_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/time_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/timeline_marker.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/transmit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/transmit_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/transmit_blue.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/transmit_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/transmit_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/transmit_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/transmit_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/treeClosed.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/treeOpen.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/tux.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/user_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/user_comment.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/user_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/user_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/user_female.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/user_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/user_gray.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/user_green.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/user_orange.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/user_red.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/user_suit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/users.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/vcard.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/vcard_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/vcard_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/vcard_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/vector.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/vector_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/vector_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/wand.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/weather_clouds.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/weather_cloudy.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/weather_lightning.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/weather_rain.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/weather_snow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/weather_sun.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/webcam.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/webcam_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/webcam_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/webcam_error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/world.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/world_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/world_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/world_edit.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/world_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/world_link.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/wrench.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/wrench_orange.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/xhtml.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/xhtml_add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/xhtml_delete.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/xhtml_go.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/xhtml_valid.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/zoom.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/zoom_in.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/icons/zoom_out.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/DockLink.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/column-header.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/dialogbg.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/dialogpriority.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/dropshadow/eq-bottom.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/dropshadow/eq-bottomleft-inner.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/dropshadow/eq-bottomleft.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/dropshadow/eq-bottomright-inner.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/dropshadow/eq-bottomright.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/dropshadow/eq-left.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/dropshadow/eq-leftbottom.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/dropshadow/eq-lefttop.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/dropshadow/eq-right.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/dropshadow/eq-rightbottom.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/dropshadow/eq-righttop.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/dropshadow/eq-top.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/dropshadow/eq-topleft-inner.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/dropshadow/eq-topleft.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/dropshadow/eq-topright-inner.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/dropshadow/eq-topright.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/navbar.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/navbar.png_1
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/navbartitle.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/navbartitle.png_1
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/navbartitle.png_2
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/navbartitle.png_3
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/navbartitle.png_4
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/section-header.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/ui/layout/tabselected.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/images/vborder.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/js/pagebus.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/js/pagebus_2.0.js
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/monitor.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/riftsaw_logo.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/theme/chrome/chrome.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/theme/chrome/corner.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/theme/chrome/corner_dialog_topleft.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/theme/chrome/corner_dialog_topright.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/theme/chrome/hborder.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/theme/chrome/hborder_blue_shadow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/theme/chrome/hborder_gray_shadow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/theme/chrome/vborder.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/theme/chrome/vborder_blue_shadow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/theme/chrome/vborder_gray_shadow.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/toolset-profile.properties
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/version.txt
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/widgets-default.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app/workspace.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/app.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/chart.css
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/Jbpm_logo.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/Jbpm_logo_small.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/ajax-loader.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/bg_gradient.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/bg_headergradient.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/bg_listgradient.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/bg_suggestgradient.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/blank_loading.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/blank_splash.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/gwt-logo.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/05.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/05_1.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/13.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/14.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/27.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/29.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/31.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/36.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/41.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/49.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/add.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/add_small.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/confirm.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/confirm_small.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/deny.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/deny_small.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/error.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/examine.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/large.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/large_small.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/loading.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/lock.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/lock_small.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/pause.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/pause_small.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/play.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/play_red_big.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/play_small.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/remove.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/remove_small.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/stop.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/stop_small.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/icons/unlock.png
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/loading-circle.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/loading.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/loading_lite.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/processSample.jpg
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/images/tab.gif
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/index.html
+rm -rf $FSW_HOME/jboss-eap-6.1/standalone/deployments/switchyard-bpel-console.war/logout.jsp
+
+
+echo "Unzipping patch files to $FSW_HOME now"
+unzip -oq $PATCH_HOME/fsw-6.0_1_2015-base.zip -d $FSW_HOME
+unzip -oq $PATCH_HOME/fsw-6.0_1_2015-dtgov.zip -d $FSW_HOME
+if [ $RT_TYPE = "server" ]
+then
+   unzip -oq $PATCH_HOME/fsw-6.0_1_2015-rtgov-server.zip -d $FSW_HOME
+fi
+if [ $RT_TYPE = "client" ]
+then
+   unzip -oq $PATCH_HOME/fsw-6.0_1_2015-rtgov-client.zip -d $FSW_HOME
+fi   
+unzip -oq $PATCH_HOME/fsw-6.0_1_2015-sramp.zip -d $FSW_HOME
+unzip -oq $PATCH_HOME/fsw-6.0_1_2015-switchyard.zip -d $FSW_HOME
+
+
+echo "Switchyard module after patching: " 
+ls -l $FSW_HOME/jboss-eap-6.1/modules/system/layers/soa/org/switchyard/common/main/
+
+
+
+
+
+
+
+
+
+
