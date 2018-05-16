@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?><jbossesb-deployment>
+  <depends>org.hornetq:module=JMS,type=Queue,name="scheduled_jms_checker_gw"</depends>
+  <depends>org.hornetq:module=JMS,type=Queue,name="scheduled_jms_checker_esb"</depends>
+</jbossesb-deployment>

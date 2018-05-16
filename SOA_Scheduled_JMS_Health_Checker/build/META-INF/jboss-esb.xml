@@ -1,0 +1,85 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+<jbossesb xmlns="http://anonsvn.labs.jboss.com/labs/jbossesb/trunk/product/etc/schemas/xml/jbossesb-1.0.1.xsd"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://anonsvn.labs.jboss.com/labs/jbossesb/trunk/product/etc/schemas/xml/jbossesb-1.0.1.xsd http://anonsvn.jboss.org/repos/labs/labs/jbossesb/trunk/product/etc/schemas/xml/jbossesb-1.0.1.xsd"
+    parameterReloadSecs="5">
+
+	<providers>
+		<schedule-provider name="scheduler">
+			<simple-schedule scheduleid="20-sec-trigger" frequency="20" />
+		</schedule-provider>
+
+          <jms-provider name="HornetQ" connection-factory="ConnectionFactory">
+              <jms-bus busid="hqNotificationChannel">
+                  <jms-message-filter
+                      dest-type="QUEUE"
+                      dest-name="queue/scheduled_jms_checker_esb"
+                  />
+              </jms-bus>
+
+          </jms-provider>		
+	</providers>
+
+	<services>
+		<service category="ScheduledServices"
+			name="ScheduledJMSCheckerService"
+			description="Sends a message that will result in a file being found, proving HornetQ is healthy">
+			<listeners>
+				<scheduled-listener name="my_scheduled_listener"
+					scheduleidref="20-sec-trigger"
+					event-processor="org.jboss.soa.esb.samples.quickstart.scheduler.ScheduledActionMsgComposer" />
+			</listeners>
+			<actions mep="OneWay">
+			    <action name="printMessage" class="org.jboss.soa.esb.actions.SystemPrintln">
+                      <property name="message" value="A message indicating scheduled activity is happening"/>
+                      <property name="printfull" value="false"/>
+                </action>
+				<action name="routeToReplyQueue" class="org.jboss.soa.esb.actions.routing.JMSRouter">
+						<!--property name="jndi-context-factory" value="org.jnp.interfaces.NamingContextFactory"/>
+						<property name="jndi-URL" value="127.0.0.1:1099"/>
+						<property name="jndi-pkg-prefix" value="org.jboss.naming:org.jnp.interfaces"/ -->
+						<property name="connection-factory" value="ConnectionFactory"/>
+						<property name="jndiName" value="queue/scheduled_jms_checker_esb"/>
+						<property name="unwrap" value="false"/>
+			   </action>                
+			    <action name="printMessage2" class="org.jboss.soa.esb.actions.SystemPrintln">
+                      <property name="message" value="JMS Message has been sent."/>
+                      <property name="printfull" value="false"/>
+                </action>
+			</actions>
+		</service>
+
+		<service category="ReportingServiceCategory" name="ReportingService1" description="JMS receiver 1">
+            <listeners>
+                <jms-listener name="JMS-ESBListener" busidref="hqNotificationChannel"/>
+            </listeners>
+            <actions mep="OneWay">
+			    <action name="printMessage3" class="org.jboss.soa.esb.actions.SystemPrintln">
+                      <property name="message" value="JMS Message has been received."/>
+                      <property name="printfull" value="false"/>
+            </action>
+			<action name="notificationAction" class="org.jboss.soa.esb.actions.Notifier">    
+					<property name="okMethod" value="notifyOK" />
+					<property name="notification-details"> 
+                       	<NotificationList type="ok">
+                        	<target class="NotifyFiles">
+								<file append="false" URI="file:///home/rick/Junk/jms_check.log"/>
+							</target>
+						</NotificationList>
+						<NotificationList type="err">
+							<target class="NotifyConsole"/>
+                        	<target class="NotifyFiles">
+								<file append="false" URI="file:///home/rick/Junk/jms_check_ERROR.log"/>
+							</target>
+						</NotificationList>
+					</property>
+				</action>	
+            </actions>
+        </service>
+
+
+
+
+	</services>
+
+</jbossesb>
